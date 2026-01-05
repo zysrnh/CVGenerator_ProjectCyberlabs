@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 
 const CVImportGenerator = () => {
@@ -6,33 +7,40 @@ const CVImportGenerator = () => {
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [photos, setPhotos] = useState({});
   const [isGenerating, setIsGenerating] = useState(false);
-  const [logoData, setLogoData] = useState(null);
-  const [logo2Data, setLogo2Data] = useState(null);
+  const [companyLogoData, setCompanyLogoData] = useState(null);
+  const [patikaLogoData, setPatikaLogoData] = useState(null);
   const [macImageData, setMacImageData] = useState(null);
 
-  React.useEffect(() => {
+  // Fixed header logos - no upload functionality
+  const headerLogo1 = '/storage/logo/LoringMargi.png';
+  const headerLogo2 = '/storage/logo/Patika.jpeg';
+
+  useEffect(() => {
     const loadImages = async () => {
       try {
+        // Load company logo
         try {
           const response1 = await fetch('/storage/logo/LoringMargi.png');
           const blob1 = await response1.blob();
           const reader1 = new FileReader();
-          reader1.onloadend = () => setLogoData(reader1.result);
+          reader1.onloadend = () => setCompanyLogoData(reader1.result);
           reader1.readAsDataURL(blob1);
         } catch (err) {
-          console.log('Logo 1 not found');
+          console.log('Company logo not found');
         }
 
+        // Load Patika logo (hardcoded for CV)
         try {
           const response2 = await fetch('/storage/logo/Patika.jpeg');
           const blob2 = await response2.blob();
           const reader2 = new FileReader();
-          reader2.onloadend = () => setLogo2Data(reader2.result);
+          reader2.onloadend = () => setPatikaLogoData(reader2.result);
           reader2.readAsDataURL(blob2);
         } catch (err) {
-          console.log('Logo 2 not found');
+          console.log('Patika logo not found');
         }
 
+        // Load Mac image
         try {
           const response3 = await fetch('/storage/logo/Mac.png');
           const blob3 = await response3.blob();
@@ -64,19 +72,11 @@ const CVImportGenerator = () => {
     reader.readAsArrayBuffer(file);
   };
 
-  const handleLogoUpload = (e) => {
+  const handleCompanyLogoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (evt) => setLogoData(evt.target.result);
-    reader.readAsDataURL(file);
-  };
-
-  const handleLogo2Upload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => setLogo2Data(evt.target.result);
+    reader.onload = (evt) => setCompanyLogoData(evt.target.result);
     reader.readAsDataURL(file);
   };
 
@@ -153,7 +153,7 @@ const CVImportGenerator = () => {
     };
   };
 
-  const generateCVHTML = (person, photoData, companyLogo, companyLogo2) => {
+  const generateCVHTML = (person, photoData, companyLogo, patikaLogo) => {
     const education = parseEducation(person);
     const workExperience = parseWorkExperience(person);
     const languages = parseLanguages(person);
@@ -164,13 +164,14 @@ const CVImportGenerator = () => {
 <head>
 <meta charset="utf-8">
 <title>CV - ${person.full_name || ''}</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-@page{size:A4;margin:0}*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;margin:0;padding:0;font-size:9pt;background:#fff;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.page{width:210mm;min-height:297mm;padding:10mm 15mm;margin:0 auto;background:white;page-break-after:always}.page:last-child{page-break-after:auto}.header{display:flex;align-items:stretch;border:2px solid #000;margin-bottom:8px;height:120px}.header-left{display:flex;align-items:stretch;flex:1}.photo-container{width:100px;border-right:2px solid #000;overflow:hidden;background:#f0f0f0;display:flex;align-items:center;justify-content:center;flex-shrink:0}.photo-container img{width:100%;height:100%;object-fit:cover}.header-text{flex:1;display:flex;flex-direction:column}.header-text table{width:100%;border-collapse:collapse;height:100%}.header-text td{border:1px solid #000;padding:5px 10px;font-size:9pt;vertical-align:middle}.header-text .label-col{width:200px;background:#e0e0e0;font-weight:bold;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.header-right{width:140px;display:flex;flex-direction:column;border-left:2px solid #000;flex-shrink:0}.logo-box{height:50%;display:flex;align-items:center;justify-content:center;padding:10px;background:#000;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.logo-box:first-child{border-bottom:2px solid #000}.logo-box img{max-width:100%;max-height:100%;object-fit:contain}.company-text{text-align:center;font-weight:bold;font-size:10pt;line-height:1.3;padding:5px}.section-title{background:#e0e0e0;border:2px solid #000;padding:4px;font-weight:bold;text-align:center;margin-top:6px;margin-bottom:0;font-size:9.5pt;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}table.data-table{width:100%;border-collapse:collapse;margin-bottom:0}.data-table td,.data-table th{border:1px solid #000;padding:3px 6px;font-size:9pt;vertical-align:middle}.data-table th{background:#e0e0e0;font-weight:bold;text-align:center;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.data-table .label-col{width:180px;background:#e0e0e0;font-weight:bold;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.center-text{text-align:center}
+@page{size:A4;margin:0}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Montserrat',sans-serif;margin:0;padding:0;font-size:8pt;background:#fff;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.page{width:210mm;min-height:297mm;padding:8mm 12mm;margin:0 auto;background:white;page-break-after:always}.page:last-child{page-break-after:auto}.header{display:flex;align-items:stretch;border:2px solid #000;margin-bottom:6px;height:100px}.header-left{display:flex;align-items:stretch;flex:1}.photo-container{width:85px;border-right:2px solid #000;overflow:hidden;background:#f0f0f0;display:flex;align-items:center;justify-content:center;flex-shrink:0}.photo-container img{width:100%;height:100%;object-fit:cover}.header-text{flex:1;display:flex;flex-direction:column}.header-text table{width:100%;border-collapse:collapse;height:100%}.header-text td{border:1px solid #000;padding:3px 8px;font-size:8pt;vertical-align:middle}.header-text .label-col{width:180px;background:#e0e0e0;font-weight:600;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.header-right{width:200px;display:flex;flex-direction:column;border-left:2px solid #000;flex-shrink:0}.logo-box{display:flex;align-items:center;justify-content:center;background:#000;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;border-bottom:2px solid #000}.logo-box:last-child{border-bottom:none}.logo-box:first-child{height:30px;padding:5px}.logo-box:nth-child(2){height:30px;background:#fff;padding:2px}.logo-box:last-child{height:40px;background:#fff;padding:6px}.logo-box img{max-width:100%;max-height:100%;object-fit:contain}.company-text{text-align:center;font-weight:700;font-size:7.5pt;line-height:1.1;padding:2px}.section-title{background:#e0e0e0;border:2px solid #000;padding:3px;font-weight:700;text-align:center;margin-top:4px;margin-bottom:0;font-size:8.5pt;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}table.data-table{width:100%;border-collapse:collapse;margin-bottom:0}.data-table td,.data-table th{border:1px solid #000;padding:2px 5px;font-size:8pt;vertical-align:middle}.data-table th{background:#e0e0e0;font-weight:700;text-align:center;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.data-table .label-col{width:160px;background:#e0e0e0;font-weight:600;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.center-text{text-align:center}
 </style>
 </head>
 <body>
 <div class="page">
-<div class="header"><div class="header-left"><div class="photo-container">${photoData ? `<img src="${photoData}" alt="Photo"/>` : '<div style="font-size:10pt;font-weight:bold;color:#666;">PHOTO</div>'}</div><div class="header-text"><table><tr><td class="label-col">FULL NAME / ADI SOYADI</td><td><strong>${person.full_name || ''}</strong></td></tr><tr><td class="label-col">OBJECTIVE / HEDEF</td><td>${person.objective || ''}</td></tr><tr><td class="label-col">POSITION APPLIED FOR / BAŞVURULAN POZİSYON</td><td>${person.position_applied || ''}</td></tr></table></div></div><div class="header-right"><div class="logo-box">${companyLogo ? `<img src="${companyLogo}" alt="Logo 1"/>` : ''}</div><div class="logo-box" style="background:#fff;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;border-bottom:2px solid #000;"><div class="company-text">PT. LORING MARGI<br/>INTERNASIONAL</div></div><div class="logo-box" style="background:#fff;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;">${companyLogo2 ? `<img src="${companyLogo2}" alt="Logo 2"/>` : ''}</div></div></div>
+<div class="header"><div class="header-left"><div class="photo-container">${photoData ? `<img src="${photoData}" alt="Photo"/>` : '<div style="font-size:10pt;font-weight:700;color:#666;">PHOTO</div>'}</div><div class="header-text"><table><tr><td class="label-col">FULL NAME / ADI SOYADI</td><td><strong>${person.full_name || ''}</strong></td></tr><tr><td class="label-col">OBJECTIVE / HEDEF</td><td>${person.objective || ''}</td></tr><tr><td class="label-col">POSITION APPLIED FOR / BAŞVURULAN POZİSYON</td><td>${person.position_applied || ''}</td></tr></table></div></div><div class="header-right"><div class="logo-box">${companyLogo ? `<img src="${companyLogo}" alt="Logo"/>` : ''}</div><div class="logo-box" style="background:#fff;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;"><div class="company-text">PT. LORING MARGI<br/>INTERNASIONAL</div></div><div class="logo-box" style="background:#fff;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;">${patikaLogo ? `<img src="${patikaLogo}" alt="Patika"/>` : ''}</div></div></div>
 <div class="section-title">PERSONAL DETAILS / KİŞİSEL BİLGİLER</div><table class="data-table"><tr><td class="label-col">AGE / YAŞ</td><td>${person.age || ''}</td></tr><tr><td class="label-col">SEX / CİNSİYET</td><td>${person.sex || ''}</td></tr><tr><td class="label-col">HEIGHT / BOY</td><td>${person.height || ''}</td></tr><tr><td class="label-col">WEIGHT / KİLO</td><td>${person.weight || ''}</td></tr><tr><td class="label-col">ADDRESS / ADRES</td><td>${person.address || ''}</td></tr><tr><td class="label-col">MOBILE PHONE / CEP TELEFONU</td><td>${person.mobile_phone || ''}</td></tr><tr><td class="label-col">EMAIL ADDRESS / EMAİL ADRESİ</td><td>${person.email_address || ''}</td></tr><tr><td class="label-col">PLACE OF BIRTH / DOĞUM YERİ</td><td>${person.place_of_birth || ''}</td></tr><tr><td class="label-col">DATE OF BIRTH / DOĞUM TARİHİ</td><td>${person.date_of_birth || ''}</td></tr><tr><td class="label-col">NATIONALITY / MİLLİYETİ</td><td>${person.nationality || ''}</td></tr><tr><td class="label-col">MARITAL STATUS / MEDENİ DURUMU</td><td>${person.marital_status || ''}</td></tr><tr><td class="label-col">PASSPORT NUMBER / PASAPORT NUMARASI</td><td>${person.passport_number || ''}</td></tr><tr><td class="label-col">PASSPORT EXPIRY DATE / PASAPORT GEÇERLİLİK TARİHİ</td><td>${person.passport_expiry_date || ''}</td></tr></table>
 <div class="section-title">WORK EXPERIENCES / İŞ TECRÜBELERİ</div><table class="data-table"><thead><tr><th style="width:35%;">NAME OF EMPLOYER / İŞVERENİN ADI</th><th style="width:35%;">POSITION & RESPONSIBILITIES / GÖREV VE SORUMLULUKLAR</th><th style="width:15%;">STARTING DATE / BAŞLANGIÇ TARİHİ</th><th style="width:15%;">LEAVING DATE / AYRILIŞ TARİHİ</th></tr></thead><tbody>${workExperience.map(work => `<tr><td>${work.company}</td><td>${work.position}</td><td class="center-text">${work.startDate}</td><td class="center-text">${work.leavingDate}</td></tr>`).join('')}${workExperience.length < 3 ? Array(3 - workExperience.length).fill('<tr><td></td><td></td><td></td><td></td></tr>').join('') : ''}</tbody></table>
 <div class="section-title">EDUCATION HISTORY / EĞİTİM DURUMU</div><table class="data-table"><thead><tr><th style="width:40%;">SCHOOL NAME / OKULUN ADI</th><th style="width:30%;">STUDY / BÖLÜM</th><th style="width:15%;">STARTING DATE / BAŞLANGIÇ TARİHİ</th><th style="width:15%;">GRADUATION DATE / AYRILIŞ TARİHİ</th></tr></thead><tbody>${education.map(edu => `<tr><td>${edu.school}</td><td>${edu.major}</td><td class="center-text">${edu.startDate}</td><td class="center-text">${edu.gradDate}</td></tr>`).join('')}${education.length < 2 ? Array(2 - education.length).fill('<tr><td></td><td></td><td></td><td></td></tr>').join('') : ''}</tbody></table>
@@ -184,7 +185,7 @@ const CVImportGenerator = () => {
     if (!selectedPerson) return;
     const personIndex = excelData.indexOf(selectedPerson);
     const photoData = photos[personIndex];
-    const html = generateCVHTML(selectedPerson, photoData, logoData, logo2Data);
+    const html = generateCVHTML(selectedPerson, photoData, companyLogoData, patikaLogoData);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -200,7 +201,7 @@ const CVImportGenerator = () => {
     try {
       const personIndex = excelData.indexOf(selectedPerson);
       const photoData = photos[personIndex];
-      const html = generateCVHTML(selectedPerson, photoData, logoData, logo2Data);
+      const html = generateCVHTML(selectedPerson, photoData, companyLogoData, patikaLogoData);
       const iframe = document.createElement('iframe');
       iframe.style.position = 'absolute';
       iframe.style.left = '-9999px';
@@ -225,29 +226,21 @@ const CVImportGenerator = () => {
     if (!selectedPerson) return;
     const personIndex = excelData.indexOf(selectedPerson);
     const photoData = photos[personIndex];
-    const html = generateCVHTML(selectedPerson, photoData, logoData, logo2Data);
+    const html = generateCVHTML(selectedPerson, photoData, companyLogoData, patikaLogoData);
     const newWindow = window.open();
     newWindow.document.write(html);
     newWindow.document.close();
   };
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
+    <div className="min-h-screen bg-gray-50" style={{fontFamily: 'Montserrat, system-ui, -apple-system, sans-serif'}}>
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex items-center justify-between">
           <div className="w-32 sm:w-40">
-            {logoData ? (
-              <img src={logoData} alt="Loring Margi" className="w-full h-auto" />
-            ) : (
-              <div className="bg-gray-200 h-12 flex items-center justify-center text-xs">Logo 1</div>
-            )}
+            <img src={headerLogo1} alt="Loring Margi" className="w-full h-auto" onError={(e) => {e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60"%3E%3Crect width="200" height="60" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23666" font-family="Arial" font-size="12"%3ELogo 1%3C/text%3E%3C/svg%3E'}} />
           </div>
           <div className="w-32 sm:w-40">
-            {logo2Data ? (
-              <img src={logo2Data} alt="Patika" className="w-full h-auto" />
-            ) : (
-              <div className="bg-gray-200 h-12 flex items-center justify-center text-xs">Logo 2</div>
-            )}
+            <img src={headerLogo2} alt="Patika" className="w-full h-auto" onError={(e) => {e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60"%3E%3Crect width="200" height="60" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23666" font-family="Arial" font-size="12"%3ELogo 2%3C/text%3E%3C/svg%3E'}} />
           </div>
         </div>
       </div>
@@ -259,32 +252,33 @@ const CVImportGenerator = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-8 mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Company Logo</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Company Logo (for CV Header)</h2>
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row items-center gap-6">
               <div className="w-48 h-48 flex items-center justify-center bg-black rounded">
-                {logoData ? (
-                  <img src={logoData} alt="Logo" className="max-w-full max-h-full object-contain p-4" />
+                {companyLogoData ? (
+                  <img src={companyLogoData} alt="Logo" className="max-w-full max-h-full object-contain p-4" />
                 ) : (
                   <div className="text-white text-sm">Loading...</div>
                 )}
               </div>
               <div className="flex-1">
-                {logoData ? (
+                {companyLogoData ? (
                   <div className="space-y-3">
                     <p className="text-sm text-gray-600">Logo loaded from storage</p>
                     <p className="text-sm text-gray-600">Path: /storage/logo/LoringMargi.png</p>
+                    <p className="text-xs text-gray-500 mt-2">Note: Patika logo is hardcoded and cannot be changed</p>
                     <label className="inline-block">
-                      <span className="px-6 py-2 bg-gray-600 text-white rounded cursor-pointer hover:bg-gray-700 transition text-sm">Choose File</span>
-                      <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                      <span className="px-6 py-2 bg-gray-600 text-white rounded cursor-pointer hover:bg-gray-700 transition text-sm font-medium">Change Company Logo</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={handleCompanyLogoUpload} />
                     </label>
                   </div>
                 ) : (
                   <div>
-                    <p className="text-sm text-gray-600 mb-3">Logo not found</p>
+                    <p className="text-sm text-gray-600 mb-3">Logo not found in storage</p>
                     <label className="inline-block">
-                      <span className="px-6 py-2 bg-gray-600 text-white rounded cursor-pointer hover:bg-gray-700 transition text-sm">Upload Logo</span>
-                      <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                      <span className="px-6 py-2 bg-gray-600 text-white rounded cursor-pointer hover:bg-gray-700 transition text-sm font-medium">Upload Company Logo</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={handleCompanyLogoUpload} />
                     </label>
                   </div>
                 )}
