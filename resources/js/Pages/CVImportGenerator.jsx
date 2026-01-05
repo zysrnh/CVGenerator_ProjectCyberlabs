@@ -7,6 +7,7 @@ const CVImportGenerator = () => {
   const [photos, setPhotos] = useState({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [logoData, setLogoData] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   React.useEffect(() => {
     const loadLogo = async () => {
@@ -155,7 +156,7 @@ const CVImportGenerator = () => {
             margin: 0 auto;
             background: white;
             page-break-after: always;
-        }
+        }   
         .page:last-child {
             page-break-after: auto;
         }
@@ -671,35 +672,142 @@ const CVImportGenerator = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black p-3 sm:p-6" style={{fontFamily: 'Montserrat, sans-serif'}}>
+    <div className={`min-h-screen p-3 sm:p-6 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`} style={{fontFamily: 'Montserrat, sans-serif'}}>
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+        
+        .animate-fadeInUp {
+          animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .animate-slideIn {
+          animation: slideIn 0.5s ease-out;
+        }
+        
+        .animate-pulse {
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        .card {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card:hover {
+          transform: translateY(-2px);
+        }
+        
+        .btn {
+          transition: all 0.2s ease;
+        }
+        
+        .btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+        }
+        
+        .btn:active:not(:disabled) {
+          transform: translateY(0);
+        }
+      `}</style>
+      
       <div className="max-w-6xl mx-auto">
         
-        <div className="bg-white border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-8 mb-4 sm:mb-8 transition-all duration-300 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] sm:hover:translate-x-[-2px] sm:hover:translate-y-[-2px]">
-          <div className="mb-2 sm:mb-3">
-            <h1 className="text-2xl sm:text-4xl font-black text-black tracking-tight uppercase">CV GENERATOR</h1>
-          </div>
-          <p className="text-gray-800 font-semibold uppercase text-xs sm:text-sm tracking-wide">UPLOAD LOGO, EXCEL & FOTO → GENERATE CV PDF FORMAT PT. LORING MARGI INTERNASIONAL</p>
+        {/* DARK MODE TOGGLE */}
+        <div className="flex justify-end mb-4 sm:mb-6 animate-fadeInUp">
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className={`btn font-black px-4 sm:px-6 py-2 sm:py-3 border-2 sm:border-4 transition-all duration-200 uppercase tracking-wide text-xs sm:text-sm ${
+              isDarkMode 
+                ? 'bg-white text-black border-white shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] sm:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:bg-black hover:text-white hover:border-white' 
+                : 'bg-black text-white border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-white hover:text-black hover:border-black'
+            }`}
+          >
+            {isDarkMode ? '☀ LIGHT MODE' : '🌙 DARK MODE'}
+          </button>
         </div>
 
-        <div className="bg-white border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-8 mb-4 sm:mb-8 transition-all duration-300 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] sm:hover:translate-x-[-2px] sm:hover:translate-y-[-2px]">
-          <h2 className="text-xl sm:text-2xl font-black text-black mb-4 sm:mb-6 uppercase tracking-wide">LOGO PERUSAHAAN</h2>
+        {/* HEADER CARD */}
+        <div className={`card border-2 sm:border-4 p-4 sm:p-8 mb-4 sm:mb-8 animate-fadeInUp ${
+          isDarkMode 
+            ? 'bg-gray-800 border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] sm:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]' 
+            : 'bg-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]'
+        }`}>
+          <div className="mb-2 sm:mb-3">
+            <h1 className={`text-2xl sm:text-4xl font-black tracking-tight uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>
+              CV GENERATOR
+            </h1>
+          </div>
+          <p className={`font-semibold uppercase text-xs sm:text-sm tracking-wide ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
+            UPLOAD LOGO, EXCEL & FOTO → GENERATE CV PDF FORMAT PT. LORING MARGI INTERNASIONAL
+          </p>
+        </div>
+
+        {/* LOGO SECTION */}
+        <div className={`card border-2 sm:border-4 p-4 sm:p-8 mb-4 sm:mb-8 animate-fadeInUp ${
+          isDarkMode 
+            ? 'bg-gray-800 border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] sm:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]' 
+            : 'bg-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]'
+        }`} style={{animationDelay: '0.1s'}}>
+          <h2 className={`text-xl sm:text-2xl font-black mb-4 sm:mb-6 uppercase tracking-wide ${isDarkMode ? 'text-white' : 'text-black'}`}>
+            LOGO PERUSAHAAN
+          </h2>
           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-            <div className="flex flex-col items-center justify-center w-40 h-40 sm:w-48 sm:h-48 border-2 sm:border-4 border-black bg-gray-50">
+            <div className={`flex flex-col items-center justify-center w-40 h-40 sm:w-48 sm:h-48 border-2 sm:border-4 ${
+              isDarkMode ? 'border-white bg-gray-700' : 'border-black bg-gray-50'
+            }`}>
               {logoData ? (
                 <img src={logoData} alt="Company Logo" className="w-28 h-28 sm:w-32 sm:h-32 object-contain" />
               ) : (
                 <div className="text-center">
-                  <p className="text-xs sm:text-sm text-gray-700 font-bold uppercase">LOADING LOGO...</p>
+                  <p className={`text-xs sm:text-sm font-bold uppercase animate-pulse ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    LOADING LOGO...
+                  </p>
                 </div>
               )}
             </div>
             <div className="flex-1 w-full">
               {logoData ? (
                 <div className="space-y-2 sm:space-y-3 text-center sm:text-left">
-                  <p className="text-black font-black text-base sm:text-lg uppercase">LOGO LOADED FROM STORAGE</p>
-                  <p className="text-xs text-gray-700 font-semibold uppercase tracking-wider break-all">PATH: /STORAGE/LOGO/LORING.JPEG</p>
+                  <p className={`font-black text-base sm:text-lg uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                    LOGO LOADED FROM STORAGE
+                  </p>
+                  <p className={`text-xs font-semibold uppercase tracking-wider break-all ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>
+                    PATH: /STORAGE/LOGO/LORING.JPEG
+                  </p>
                   <label className="inline-block">
-                    <span className="text-xs sm:text-sm text-black font-bold uppercase cursor-pointer hover:bg-black hover:text-white px-2 sm:px-3 py-1 sm:py-2 transition-all duration-200 border-2 border-black inline-block">
+                    <span className={`btn text-xs sm:text-sm font-bold uppercase cursor-pointer px-2 sm:px-3 py-1 sm:py-2 transition-all duration-200 border-2 inline-block ${
+                      isDarkMode 
+                        ? 'text-white border-white hover:bg-white hover:text-black' 
+                        : 'text-black border-black hover:bg-black hover:text-white'
+                    }`}>
                       UPLOAD LOGO BERBEDA
                     </span>
                     <input 
@@ -712,9 +820,17 @@ const CVImportGenerator = () => {
                 </div>
               ) : (
                 <div className="space-y-2 sm:space-y-3 text-center sm:text-left">
-                  <p className="text-black font-black text-base sm:text-lg uppercase">⚠ LOGO TIDAK DITEMUKAN DI STORAGE</p>
-                  <p className="text-xs sm:text-sm text-gray-700 font-bold uppercase mb-2 sm:mb-3">UPLOAD LOGO MANUAL:</p>
-                  <label className="inline-block bg-black text-white px-4 sm:px-6 py-2 sm:py-3 cursor-pointer transition-all duration-200 hover:bg-white hover:text-black border-2 sm:border-4 border-black font-black uppercase">
+                  <p className={`font-black text-base sm:text-lg uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                    ⚠ LOGO TIDAK DITEMUKAN DI STORAGE
+                  </p>
+                  <p className={`text-xs sm:text-sm font-bold uppercase mb-2 sm:mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    UPLOAD LOGO MANUAL:
+                  </p>
+                  <label className={`inline-block btn px-4 sm:px-6 py-2 sm:py-3 cursor-pointer transition-all duration-200 border-2 sm:border-4 font-black uppercase ${
+                    isDarkMode 
+                      ? 'bg-white text-black border-white hover:bg-black hover:text-white' 
+                      : 'bg-black text-white border-black hover:bg-white hover:text-black'
+                  }`}>
                     <span className="text-xs sm:text-sm">UPLOAD LOGO</span>
                     <input 
                       type="file" 
@@ -729,14 +845,27 @@ const CVImportGenerator = () => {
           </div>
         </div>
 
-        <div className="bg-white border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-8 mb-4 sm:mb-8 transition-all duration-300 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] sm:hover:translate-x-[-2px] sm:hover:translate-y-[-2px]">
-          <h2 className="text-xl sm:text-2xl font-black text-black mb-4 sm:mb-6 uppercase tracking-wide">UPLOAD FILE EXCEL</h2>
-          <label className="flex flex-col items-center justify-center w-full h-36 sm:h-48 border-2 sm:border-4 border-dashed border-black cursor-pointer hover:bg-gray-100 transition-all duration-300">
+        {/* EXCEL UPLOAD */}
+        <div className={`card border-2 sm:border-4 p-4 sm:p-8 mb-4 sm:mb-8 animate-fadeInUp ${
+          isDarkMode 
+            ? 'bg-gray-800 border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] sm:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]' 
+            : 'bg-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]'
+        }`} style={{animationDelay: '0.2s'}}>
+          <h2 className={`text-xl sm:text-2xl font-black mb-4 sm:mb-6 uppercase tracking-wide ${isDarkMode ? 'text-white' : 'text-black'}`}>
+            UPLOAD FILE EXCEL
+          </h2>
+          <label className={`flex flex-col items-center justify-center w-full h-36 sm:h-48 border-2 sm:border-4 border-dashed cursor-pointer transition-all duration-300 ${
+            isDarkMode 
+              ? 'border-white hover:bg-gray-700' 
+              : 'border-black hover:bg-gray-100'
+          }`}>
             <div className="flex flex-col items-center justify-center pt-4 pb-4 sm:pt-5 sm:pb-6 px-3">
-              <p className="mb-2 text-xs sm:text-sm text-black font-black uppercase tracking-wider text-center">
+              <p className={`mb-2 text-xs sm:text-sm font-black uppercase tracking-wider text-center ${isDarkMode ? 'text-white' : 'text-black'}`}>
                 CLICK TO UPLOAD ATAU DRAG AND DROP
               </p>
-              <p className="text-xs text-gray-700 font-bold uppercase tracking-wide">EXCEL FILE (.XLSX, .XLS)</p>
+              <p className={`text-xs font-bold uppercase tracking-wide ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                EXCEL FILE (.XLSX, .XLS)
+              </p>
             </div>
             <input 
               type="file" 
@@ -747,60 +876,99 @@ const CVImportGenerator = () => {
           </label>
           
           {excelData.length > 0 && (
-            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white border-2 sm:border-4 border-black">
-              <p className="text-black font-black text-base sm:text-lg uppercase">
+            <div className={`mt-4 sm:mt-6 p-3 sm:p-4 border-2 sm:border-4 animate-slideIn ${
+              isDarkMode ? 'bg-gray-700 border-white' : 'bg-white border-black'
+            }`}>
+              <p className={`font-black text-base sm:text-lg uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>
                 {excelData.length} DATA BERHASIL DIIMPORT
               </p>
             </div>
           )}
         </div>
 
+        {/* BULK ACTIONS */}
         {excelData.length > 0 && (
-          <div className="bg-white border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-6 mb-4 sm:mb-8 transition-all duration-300 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] sm:hover:translate-x-[-2px] sm:hover:translate-y-[-2px]">
-            <h2 className="text-xl sm:text-2xl font-black text-black mb-4 sm:mb-6 uppercase tracking-wide">BULK ACTIONS - ALL CVs ({excelData.length} PERSONS)</h2>
+          <div className={`card border-2 sm:border-4 p-4 sm:p-6 mb-4 sm:mb-8 animate-fadeInUp ${
+            isDarkMode 
+              ? 'bg-gray-800 border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] sm:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]' 
+              : 'bg-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]'
+          }`} style={{animationDelay: '0.3s'}}>
+            <h2 className={`text-xl sm:text-2xl font-black mb-4 sm:mb-6 uppercase tracking-wide ${isDarkMode ? 'text-white' : 'text-black'}`}>
+              BULK ACTIONS - ALL CVs ({excelData.length} PERSONS)
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
               <button
                 onClick={bulkPrintPDF}
                 disabled={isGenerating}
-                className="bg-black text-white font-black py-3 sm:py-4 px-4 sm:px-6 border-2 sm:border-4 border-black transition-all duration-200 hover:bg-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] uppercase tracking-wide text-xs sm:text-sm"
+                className={`btn font-black py-3 sm:py-4 px-4 sm:px-6 border-2 sm:border-4 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide text-xs sm:text-sm ${
+                  isDarkMode
+                    ? 'bg-white text-black border-white shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] sm:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:bg-black hover:text-white'
+                    : 'bg-black text-white border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-white hover:text-black'
+                }`}
               >
                 {isGenerating ? 'GENERATING...' : 'PRINT ALL TO PDF'}
               </button>
               <button
                 onClick={bulkDownloadHTML}
-                className="bg-white text-black font-black py-3 sm:py-4 px-4 sm:px-6 border-2 sm:border-4 border-black transition-all duration-200 hover:bg-black hover:text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] uppercase tracking-wide text-xs sm:text-sm"
+                className={`btn font-black py-3 sm:py-4 px-4 sm:px-6 border-2 sm:border-4 transition-all duration-200 uppercase tracking-wide text-xs sm:text-sm ${
+                  isDarkMode
+                    ? 'bg-gray-800 text-white border-white shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] sm:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:bg-white hover:text-black'
+                    : 'bg-white text-black border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-white'
+                }`}
               >
                 DOWNLOAD ALL AS HTML
               </button>
             </div>
-            <p className="text-xs sm:text-sm text-gray-700 mt-3 sm:mt-4 font-bold uppercase tracking-wide text-center sm:text-left">
+            <p className={`text-xs sm:text-sm mt-3 sm:mt-4 font-bold uppercase tracking-wide text-center sm:text-left ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
               BULK ACTIONS AKAN MEMPROSES SEMUA {excelData.length} CV SEKALIGUS DALAM SATU FILE
             </p>
           </div>
         )}
 
+        {/* DATA LIST WITH PHOTO UPLOAD */}
         {excelData.length > 0 && (
-          <div className="bg-white border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-6 mb-4 sm:mb-8 transition-all duration-300 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] sm:hover:translate-x-[-2px] sm:hover:translate-y-[-2px]">
-            <h2 className="text-xl sm:text-2xl font-black text-black mb-4 sm:mb-6 uppercase tracking-wide">UPLOAD FOTO & PILIH DATA</h2>
+          <div className={`card border-2 sm:border-4 p-4 sm:p-6 mb-4 sm:mb-8 animate-fadeInUp ${
+            isDarkMode 
+              ? 'bg-gray-800 border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] sm:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]' 
+              : 'bg-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]'
+          }`} style={{animationDelay: '0.4s'}}>
+            <h2 className={`text-xl sm:text-2xl font-black mb-4 sm:mb-6 uppercase tracking-wide ${isDarkMode ? 'text-white' : 'text-black'}`}>
+              UPLOAD FOTO & PILIH DATA
+            </h2>
             <div className="space-y-3 sm:space-y-4">
               {excelData.map((person, idx) => (
                 <div 
                   key={idx}
-                  className={`p-3 sm:p-5 border-2 sm:border-4 border-black transition-all duration-300 ${
+                  className={`card p-3 sm:p-5 border-2 sm:border-4 transition-all duration-300 ${
                     selectedPerson === person 
-                      ? 'bg-black text-white shadow-[4px_4px_0px_0px_rgba(255,255,255,0.3)] sm:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.3)]' 
-                      : 'bg-white hover:bg-gray-100 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
+                      ? isDarkMode
+                        ? 'bg-white text-black border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,0.3)] sm:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.3)]'
+                        : 'bg-black text-white border-black shadow-[4px_4px_0px_0px_rgba(255,255,255,0.3)] sm:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.3)]'
+                      : isDarkMode
+                        ? 'bg-gray-700 border-white hover:bg-gray-600 shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] sm:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]'
+                        : 'bg-white border-black hover:bg-gray-100 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
                   }`}
+                  style={{animation: 'slideIn 0.5s ease-out', animationDelay: `${0.1 * idx}s`}}
                 >
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                     <div 
                       className="flex-1 cursor-pointer w-full"
                       onClick={() => setSelectedPerson(person)}
                     >
-                      <h3 className={`font-black text-base sm:text-lg mb-1 uppercase tracking-wide ${selectedPerson === person ? 'text-white' : 'text-black'}`}>
+                      <h3 className={`font-black text-base sm:text-lg mb-1 uppercase tracking-wide ${
+                        selectedPerson === person 
+                          ? isDarkMode ? 'text-black' : 'text-white'
+                          : isDarkMode ? 'text-white' : 'text-black'
+                      }`}>
                         {person.full_name || 'NO NAME'}
                       </h3>
-                      <p className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${selectedPerson === person ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <p className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${
+                        selectedPerson === person 
+                          ? isDarkMode ? 'text-gray-700' : 'text-gray-300'
+                          : isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
                         {person.dob || 'NO DOB'} • {person.nationality || 'NO NATIONALITY'}
                       </p>
                     </div>
@@ -811,18 +979,30 @@ const CVImportGenerator = () => {
                           <img 
                             src={photos[idx]} 
                             alt="Preview" 
-                            className="w-14 h-16 sm:w-16 sm:h-20 object-cover border-2 sm:border-4 border-black"
+                            className={`w-14 h-16 sm:w-16 sm:h-20 object-cover border-2 sm:border-4 ${
+                              isDarkMode ? 'border-white' : 'border-black'
+                            }`}
                           />
                           <button
                             onClick={() => removePhoto(idx)}
-                            className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-black text-white border-2 border-white px-1.5 py-0.5 sm:px-2 sm:py-1 hover:bg-white hover:text-black hover:border-black transition-all duration-200 font-black text-xs"
+                            className={`absolute -top-1 -right-1 sm:-top-2 sm:-right-2 border-2 px-1.5 py-0.5 sm:px-2 sm:py-1 transition-all duration-200 font-black text-xs ${
+                              isDarkMode
+                                ? 'bg-white text-black border-black hover:bg-black hover:text-white hover:border-white'
+                                : 'bg-black text-white border-white hover:bg-white hover:text-black hover:border-black'
+                            }`}
                           >
                             ✕
                           </button>
                         </div>
                       ) : (
-                        <label className={`cursor-pointer border-2 sm:border-4 border-dashed p-2 sm:p-3 flex flex-col items-center justify-center transition-all duration-300 ${
-                          selectedPerson === person ? 'border-white bg-white text-black' : 'border-black bg-gray-100 hover:bg-gray-200'
+                        <label className={`btn cursor-pointer border-2 sm:border-4 border-dashed p-2 sm:p-3 flex flex-col items-center justify-center transition-all duration-300 ${
+                          selectedPerson === person 
+                            ? isDarkMode
+                              ? 'border-black bg-black text-white'
+                              : 'border-white bg-white text-black'
+                            : isDarkMode
+                              ? 'border-white bg-gray-600 hover:bg-gray-500 text-white'
+                              : 'border-black bg-gray-100 hover:bg-gray-200 text-black'
                         }`}>
                           <span className="text-xs font-black uppercase tracking-wide">UPLOAD FOTO</span>
                           <input 
@@ -835,7 +1015,11 @@ const CVImportGenerator = () => {
                       )}
                       
                       {selectedPerson === person && (
-                        <div className="bg-white text-black px-3 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm font-black border-2 border-white uppercase tracking-wide whitespace-nowrap">
+                        <div className={`px-3 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm font-black border-2 uppercase tracking-wide whitespace-nowrap animate-slideIn ${
+                          isDarkMode
+                            ? 'bg-black text-white border-black'
+                            : 'bg-white text-black border-white'
+                        }`}>
                           SELECTED
                         </div>
                       )}
@@ -847,33 +1031,54 @@ const CVImportGenerator = () => {
           </div>
         )}
 
+        {/* SINGLE CV ACTIONS */}
         {selectedPerson && (
-          <div className="bg-white border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-6 transition-all duration-300 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] sm:hover:translate-x-[-2px] sm:hover:translate-y-[-2px]">
-            <h2 className="text-xl sm:text-2xl font-black text-black mb-4 sm:mb-6 uppercase tracking-wide text-center sm:text-left">
+          <div className={`card border-2 sm:border-4 p-4 sm:p-6 animate-fadeInUp ${
+            isDarkMode 
+              ? 'bg-gray-800 border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] sm:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]' 
+              : 'bg-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]'
+          }`}>
+            <h2 className={`text-xl sm:text-2xl font-black mb-4 sm:mb-6 uppercase tracking-wide text-center sm:text-left ${
+              isDarkMode ? 'text-white' : 'text-black'
+            }`}>
               SINGLE CV UNTUK: <span className="underline block sm:inline mt-1 sm:mt-0">{selectedPerson.full_name}</span>
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
               <button
                 onClick={previewCV}
-                className="bg-white text-black font-black py-3 sm:py-4 px-4 sm:px-6 border-2 sm:border-4 border-black transition-all duration-200 hover:bg-black hover:text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] uppercase tracking-wide text-xs sm:text-sm"
+                className={`btn font-black py-3 sm:py-4 px-4 sm:px-6 border-2 sm:border-4 transition-all duration-200 uppercase tracking-wide text-xs sm:text-sm ${
+                  isDarkMode
+                    ? 'bg-gray-800 text-white border-white shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] sm:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:bg-white hover:text-black'
+                    : 'bg-white text-black border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-white'
+                }`}
               >
                 PREVIEW CV
               </button>
               <button
                 onClick={downloadPDF}
                 disabled={isGenerating}
-                className="bg-black text-white font-black py-3 sm:py-4 px-4 sm:px-6 border-2 sm:border-4 border-black transition-all duration-200 hover:bg-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] uppercase tracking-wide text-xs sm:text-sm"
+                className={`btn font-black py-3 sm:py-4 px-4 sm:px-6 border-2 sm:border-4 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide text-xs sm:text-sm ${
+                  isDarkMode
+                    ? 'bg-white text-black border-white shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] sm:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:bg-black hover:text-white'
+                    : 'bg-black text-white border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-white hover:text-black'
+                }`}
               >
                 {isGenerating ? 'GENERATING...' : 'PRINT TO PDF'}
               </button>
               <button
                 onClick={downloadHTML}
-                className="bg-white text-black font-black py-3 sm:py-4 px-4 sm:px-6 border-2 sm:border-4 border-black transition-all duration-200 hover:bg-black hover:text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] uppercase tracking-wide text-xs sm:text-sm"
+                className={`btn font-black py-3 sm:py-4 px-4 sm:px-6 border-2 sm:border-4 transition-all duration-200 uppercase tracking-wide text-xs sm:text-sm ${
+                  isDarkMode
+                    ? 'bg-gray-800 text-white border-white shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] sm:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:bg-white hover:text-black'
+                    : 'bg-white text-black border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-white'
+                }`}
               >
                 DOWNLOAD HTML
               </button>
             </div>
-            <p className="text-xs sm:text-sm text-gray-700 text-center mt-4 sm:mt-6 font-bold uppercase tracking-wide px-2">
+            <p className={`text-xs sm:text-sm text-center mt-4 sm:mt-6 font-bold uppercase tracking-wide px-2 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
               KLIK "PRINT TO PDF" AKAN MEMBUKA DIALOG PRINT BROWSER. PILIH "SAVE AS PDF" SEBAGAI PRINTER.
             </p>
           </div>
