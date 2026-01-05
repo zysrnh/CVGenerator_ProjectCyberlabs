@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title inertia>LoringMargin CV Generator</title>
         @viteReactRefresh
         @vite(['resources/js/app.jsx', 'resources/css/app.css'])
         @inertiaHead
