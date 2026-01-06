@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { Link } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 
 const CVImportGenerator = () => {
   const [excelData, setExcelData] = useState([]);
@@ -14,10 +15,13 @@ const CVImportGenerator = () => {
   const [selectedForBulk, setSelectedForBulk] = useState([]);
   const [isBulkGenerating, setIsBulkGenerating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
-
-  // NEW: Welcome screen states
   const [showWelcome, setShowWelcome] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
+
+  // NEW: State untuk save to database
+  const [isSaving, setIsSaving] = useState(false);
+  const [isBulkSaving, setIsBulkSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState({ current: 0, total: 0 });
 
   const headerLogo1 = '/storage/logo/LoringMargi.png';
   const headerLogo2 = '/storage/logo/Patika.jpeg';
@@ -194,6 +198,134 @@ const CVImportGenerator = () => {
     };
   };
 
+  // NEW: Prepare data untuk database
+  const prepareDataForDatabase = (person, photoData) => {
+    const education = parseEducation(person);
+    const workExperience = parseWorkExperience(person);
+    const languages = parseLanguages(person);
+    const skills = parseSkills(person);
+
+    return {
+      full_name: person.full_name || '',
+      objective: person.objective || '',
+      position_applied: person.position_applied || '',
+      age: person.age || null,
+      sex: person.sex || '',
+      height: person.height || '',
+      weight: person.weight || '',
+      address: person.address || '',
+      mobile_phone: person.mobile_phone || '',
+      email_address: person.email_address || '',
+      place_of_birth: person.place_of_birth || '',
+      date_of_birth: person.date_of_birth || '',
+      nationality: person.nationality || '',
+      marital_status: person.marital_status || '',
+      passport_number: person.passport_number || '',
+      passport_expiry_date: person.passport_expiry_date || '',
+      photo: photoData || null,
+      workExperiences: workExperience.map(w => ({
+        employer: w.company,
+        position: w.position,
+        start_date: w.startDate,
+        leaving_date: w.leavingDate
+      })),
+      educations: education.map(e => ({
+        school: e.school,
+        study: e.major,
+        start_date: e.startDate,
+        graduation_date: e.gradDate
+      })),
+      languages: languages,
+      pcSkills: [
+        { name: 'MS Word', level: skills.msWord },
+        { name: 'MS Excel', level: skills.msExcel },
+        { name: 'MS Outlook', level: skills.msOutlook },
+        { name: 'Other', level: skills.other }
+      ].filter(s => s.level),
+      otherSkills: skills.otherSkills ? [skills.otherSkills] : []
+    };
+  };
+
+  // NEW: Save single CV to database
+  const saveToDatabase = async () => {
+    if (!selectedPerson) return;
+
+    setIsSaving(true);
+    try {
+      const personIndex = excelData.indexOf(selectedPerson);
+      const photoData = photos[personIndex];
+      const cvData = prepareDataForDatabase(selectedPerson, photoData);
+
+      const response = await fetch('/cv-import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify(cvData)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ CV saved successfully!\nName: ${result.data.full_name}\nID: ${result.data.id}`);
+      } else {
+        throw new Error(result.message || 'Failed to save CV');
+      }
+    } catch (error) {
+      console.error('Error saving CV:', error);
+      alert('❌ Error saving CV to database. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // NEW: Bulk save to database
+  const bulkSaveToDatabase = async () => {
+    if (selectedForBulk.length === 0) {
+      alert('Please select at least one person to save');
+      return;
+    }
+
+    setIsBulkSaving(true);
+    setSaveProgress({ current: 0, total: selectedForBulk.length });
+
+    const cvs = selectedForBulk.map(idx => {
+      const person = excelData[idx];
+      const photoData = photos[idx];
+      return prepareDataForDatabase(person, photoData);
+    });
+
+    try {
+      const response = await fetch('/cv-import/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({ cvs })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ Bulk save completed!\n\nTotal: ${result.summary.total}\nSuccess: ${result.summary.success}\nFailed: ${result.summary.failed}`);
+
+        if (result.results.failed.length > 0) {
+          console.log('Failed CVs:', result.results.failed);
+        }
+      } else {
+        throw new Error(result.message || 'Failed to save CVs');
+      }
+    } catch (error) {
+      console.error('Error in bulk save:', error);
+      alert('❌ Error saving CVs to database. Please try again.');
+    } finally {
+      setIsBulkSaving(false);
+      setSaveProgress({ current: 0, total: 0 });
+    }
+  };
+
   const generateCVHTML = (person, photoData, companyLogo, patikaLogo) => {
     const education = parseEducation(person);
     const workExperience = parseWorkExperience(person);
@@ -220,7 +352,7 @@ const CVImportGenerator = () => {
 <table class="data-table" style="margin-top:6px;"><thead><tr><th style="width:20%;">PC SKILLS / BİLGİSAYAR</th><th>MS WORD</th><th>MS EXCEL</th><th>MS OUTLOOK</th><th>OTHER / DİĞER</th></tr></thead><tbody><tr><td></td><td class="center-text">${skills.msWord}</td><td class="center-text">${skills.msExcel}</td><td class="center-text">${skills.msOutlook}</td><td class="center-text">${skills.other}</td></tr></tbody></table>
 <table class="data-table" style="margin-top:6px;"><thead><tr><th>OTHER SKILLS / DİĞER</th></tr></thead><tbody><tr><td>${skills.otherSkills}</td></tr></tbody></table>
 </div></body></html>`;
-  };
+  };// Lanjutan dari Part 1...
 
   const downloadHTML = () => {
     if (!selectedPerson) return;
@@ -238,10 +370,107 @@ const CVImportGenerator = () => {
 
   const downloadPDF = async () => {
     if (!selectedPerson) return;
+
     setIsGenerating(true);
+
     try {
+      // 1️⃣ PREPARE DATA untuk database
       const personIndex = excelData.indexOf(selectedPerson);
       const photoData = photos[personIndex];
+      const dataToSubmit = prepareDataForDatabase(selectedPerson, photoData);
+
+      // 2️⃣ SAVE KE DATABASE dulu
+      const response = await fetch('/cv-import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify(dataToSubmit)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // ✅ Tampilkan notifikasi sukses yang elegan
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+                position: fixed;
+                top: 24px;
+                right: 24px;
+                background: linear-gradient(135deg, #BF9952 0%, #D4AF6A 100%);
+                color: white;
+                padding: 20px 24px;
+                border-radius: 16px;
+                box-shadow: 0 20px 60px rgba(191, 153, 82, 0.4);
+                z-index: 9999;
+                font-family: 'Poppins', sans-serif;
+                animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            `;
+        notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="
+                        background: rgba(255, 255, 255, 0.2);
+                        padding: 10px;
+                        border-radius: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">
+                        <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p style="font-weight: 600; font-size: 16px; margin: 0; letter-spacing: 0.3px;">CV Saved Successfully!</p>
+                        <p style="font-size: 13px; margin: 4px 0 0 0; opacity: 0.95;">${result.data.full_name} - ID: ${result.data.id}</p>
+                    </div>
+                </div>
+            `;
+
+        // Tambahkan animasi keyframe jika belum ada
+        if (!document.getElementById('notification-styles')) {
+          const style = document.createElement('style');
+          style.id = 'notification-styles';
+          style.textContent = `
+                    @keyframes slideInRight {
+                        from {
+                            opacity: 0;
+                            transform: translateX(100px) scale(0.9);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateX(0) scale(1);
+                        }
+                    }
+                    @keyframes slideOutRight {
+                        from {
+                            opacity: 1;
+                            transform: translateX(0) scale(1);
+                        }
+                        to {
+                            opacity: 0;
+                            transform: translateX(100px) scale(0.9);
+                        }
+                    }
+                `;
+          document.head.appendChild(style);
+        }
+
+        document.body.appendChild(notification);
+
+        // Animasi keluar sebelum remove
+        setTimeout(() => {
+          notification.style.animation = 'slideOutRight 0.4s cubic-bezier(0.4, 0, 1, 1)';
+          setTimeout(() => notification.remove(), 400);
+        }, 3000);
+      } else {
+        throw new Error(result.message || 'Failed to save CV');
+      }
+
+      // 3️⃣ GENERATE PDF (setelah save sukses)
       const html = generateCVHTML(selectedPerson, photoData, companyLogoData, patikaLogoData);
       const iframe = document.createElement('iframe');
       iframe.style.position = 'absolute';
@@ -252,17 +481,62 @@ const CVImportGenerator = () => {
       iframe.contentDocument.open();
       iframe.contentDocument.write(html);
       iframe.contentDocument.close();
+
       await new Promise(resolve => setTimeout(resolve, 500));
+
       iframe.contentWindow.print();
       setTimeout(() => document.body.removeChild(iframe), 1000);
+
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Error generating PDF. Please try downloading HTML instead.');
+      console.error('Error:', error);
+
+      // ❌ Tampilkan notifikasi error
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 20px 24px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(239, 68, 68, 0.4);
+            z-index: 9999;
+            font-family: 'Poppins', sans-serif;
+            animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        `;
+      notification.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="
+                    background: rgba(255, 255, 255, 0.2);
+                    padding: 10px;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                ">
+                    <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <p style="font-weight: 600; font-size: 16px; margin: 0; letter-spacing: 0.3px;">Unable to Save CV</p>
+                    <p style="font-size: 13px; margin: 4px 0 0 0; opacity: 0.95;">Please check your connection and try again</p>
+                </div>
+            </div>
+        `;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.4s cubic-bezier(0.4, 0, 1, 1)';
+        setTimeout(() => notification.remove(), 400);
+      }, 4000);
     } finally {
       setIsGenerating(false);
     }
   };
-
   const bulkPrintPDF = async () => {
     if (selectedForBulk.length === 0) {
       alert('Please select at least one person to print');
@@ -272,39 +546,156 @@ const CVImportGenerator = () => {
     setIsBulkGenerating(true);
     setBulkProgress({ current: 0, total: selectedForBulk.length });
 
+    // 1️⃣ PREPARE semua data untuk bulk save
+    const cvs = selectedForBulk.map(idx => {
+      const person = excelData[idx];
+      const photoData = photos[idx];
+      return prepareDataForDatabase(person, photoData);
+    });
+
     try {
-      for (let i = 0; i < selectedForBulk.length; i++) {
-        const idx = selectedForBulk[i];
-        const person = excelData[idx];
-        const photoData = photos[idx];
+      // 2️⃣ BULK SAVE KE DATABASE dulu
+      const response = await fetch('/cv-import/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({ cvs })
+      });
 
-        setBulkProgress({ current: i + 1, total: selectedForBulk.length });
+      const result = await response.json();
 
-        const html = generateCVHTML(person, photoData, companyLogoData, patikaLogoData);
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'absolute';
-        iframe.style.left = '-9999px';
-        iframe.style.width = '210mm';
-        iframe.style.height = '297mm';
-        document.body.appendChild(iframe);
-        iframe.contentDocument.open();
-        iframe.contentDocument.write(html);
-        iframe.contentDocument.close();
+      if (result.success) {
+        // ✅ Tampilkan notifikasi sukses
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+                position: fixed;
+                top: 24px;
+                right: 24px;
+                background: linear-gradient(135deg, #BF9952 0%, #D4AF6A 100%);
+                color: white;
+                padding: 20px 24px;
+                border-radius: 16px;
+                box-shadow: 0 20px 60px rgba(191, 153, 82, 0.4);
+                z-index: 9999;
+                font-family: 'Poppins', sans-serif;
+                animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            `;
+        notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="
+                        background: rgba(255, 255, 255, 0.2);
+                        padding: 10px;
+                        border-radius: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">
+                        <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p style="font-weight: 600; font-size: 16px; margin: 0; letter-spacing: 0.3px;">Bulk Save Completed!</p>
+                        <p style="font-size: 13px; margin: 4px 0 0 0; opacity: 0.95;">✅ ${result.summary.success} saved | ❌ ${result.summary.failed} failed</p>
+                    </div>
+                </div>
+            `;
 
-        await new Promise(resolve => setTimeout(resolve, 500));
-        iframe.contentWindow.print();
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        document.body.removeChild(iframe);
-
-        if (i < selectedForBulk.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!document.getElementById('notification-styles')) {
+          const style = document.createElement('style');
+          style.id = 'notification-styles';
+          style.textContent = `
+                    @keyframes slideInRight {
+                        from { opacity: 0; transform: translateX(100px) scale(0.9); }
+                        to { opacity: 1; transform: translateX(0) scale(1); }
+                    }
+                    @keyframes slideOutRight {
+                        from { opacity: 1; transform: translateX(0) scale(1); }
+                        to { opacity: 0; transform: translateX(100px) scale(0.9); }
+                    }
+                `;
+          document.head.appendChild(style);
         }
-      }
 
-      alert(`Successfully queued ${selectedForBulk.length} CVs for printing!`);
+        document.body.appendChild(notification);
+        setTimeout(() => {
+          notification.style.animation = 'slideOutRight 0.4s cubic-bezier(0.4, 0, 1, 1)';
+          setTimeout(() => notification.remove(), 400);
+        }, 3000);
+
+        // 3️⃣ PRINT semua PDF (setelah save sukses)
+        for (let i = 0; i < selectedForBulk.length; i++) {
+          const idx = selectedForBulk[i];
+          const person = excelData[idx];
+          const photoData = photos[idx];
+
+          setBulkProgress({ current: i + 1, total: selectedForBulk.length });
+
+          const html = generateCVHTML(person, photoData, companyLogoData, patikaLogoData);
+          const iframe = document.createElement('iframe');
+          iframe.style.position = 'absolute';
+          iframe.style.left = '-9999px';
+          iframe.style.width = '210mm';
+          iframe.style.height = '297mm';
+          document.body.appendChild(iframe);
+          iframe.contentDocument.open();
+          iframe.contentDocument.write(html);
+          iframe.contentDocument.close();
+
+          await new Promise(resolve => setTimeout(resolve, 500));
+          iframe.contentWindow.print();
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          document.body.removeChild(iframe);
+
+          if (i < selectedForBulk.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+
+        alert(`✅ Successfully saved and queued ${selectedForBulk.length} CVs for printing!`);
+      } else {
+        throw new Error(result.message || 'Failed to save CVs');
+      }
     } catch (error) {
-      console.error('Error in bulk printing:', error);
-      alert('Error during bulk printing. Some CVs may not have been printed.');
+      console.error('Error in bulk save/print:', error);
+
+      // ❌ Notifikasi error
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 20px 24px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(239, 68, 68, 0.4);
+            z-index: 9999;
+            font-family: 'Poppins', sans-serif;
+            animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        `;
+      notification.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="background: rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 12px;">
+                    <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <p style="font-weight: 600; font-size: 16px; margin: 0;">Bulk Save Failed</p>
+                    <p style="font-size: 13px; margin: 4px 0 0 0; opacity: 0.95;">Please try again</p>
+                </div>
+            </div>
+        `;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.4s cubic-bezier(0.4, 0, 1, 1)';
+        setTimeout(() => notification.remove(), 400);
+      }, 4000);
     } finally {
       setIsBulkGenerating(false);
       setBulkProgress({ current: 0, total: 0 });
@@ -394,6 +785,18 @@ const CVImportGenerator = () => {
         
         .btn-primary:active {
           transform: translateY(0);
+        }
+
+        .btn-success {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-success:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+          background: linear-gradient(135deg, #059669 0%, #10b981 100%);
         }
         
         .card-elegant {
@@ -507,292 +910,297 @@ const CVImportGenerator = () => {
 
       {/* Main Content */}
       <div className={`transition-opacity duration-500 ${showWelcome ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-      
-      {/* Header */}
-      <div className="bg-white border-b shadow-sm animate-fade-in-up">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex items-center justify-between">
-          <div className="w-32 sm:w-40 transform transition hover:scale-105">
-            <img src={headerLogo1} alt="Loring Margi" className="w-full h-auto" onError={(e) => { e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60"%3E%3Crect width="200" height="60" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23666" font-family="Arial" font-size="12"%3ELogo 1%3C/text%3E%3C/svg%3E' }} />
-          </div>
-          <div className="w-32 sm:w-40 transform transition hover:scale-105">
-            <img src={headerLogo2} alt="Patika" className="w-full h-auto" onError={(e) => { e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60"%3E%3Crect width="200" height="60" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23666" font-family="Arial" font-size="12"%3ELogo 2%3C/text%3E%3C/svg%3E' }} />
-          </div>
-        </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        {/* Title Section */}
-        <div className="text-center mb-8 sm:mb-12 animate-fade-in-up">
-          <h1 className="text-4xl sm:text-6xl font-bold bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text text-transparent mb-3 sm:mb-4">CV Generator</h1>
-          <p className="text-sm sm:text-lg text-gray-600 font-light max-w-3xl mx-auto">Upload Logo, Excel & Photo or Complete the Form - Generate CV PDF Format PT. Loring Margi International</p>
-        </div>
-
-        {/* Logo Section */}
-        <div className="card-elegant rounded-2xl shadow-lg p-6 sm:p-10 mb-6 sm:mb-8 animate-scale-in">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
-            <span className="w-2 h-8 bg-gradient-to-b from-[#BF9952] to-[#D4AF6A] rounded-full"></span>
-            Company Logo
-          </h2>
-          <div className="flex flex-col lg:flex-row items-center gap-8">
-            <div className="w-56 h-56 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl shadow-2xl transform transition hover:scale-105">
-              {companyLogoData ? (
-                <img src={companyLogoData} alt="Logo" className="max-w-full max-h-full object-contain p-6" />
-              ) : (
-                <div className="text-white text-sm font-light shimmer">Loading...</div>
-              )}
+        {/* Header */}
+        <div className="bg-white border-b shadow-sm animate-fade-in-up">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex items-center justify-between">
+            <div className="w-32 sm:w-40 transform transition hover:scale-105">
+              <img src={headerLogo1} alt="Loring Margi" className="w-full h-auto" onError={(e) => { e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60"%3E%3Crect width="200" height="60" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23666" font-family="Arial" font-size="12"%3ELogo 1%3C/text%3E%3C/svg%3E' }} />
             </div>
-            <div className="flex-1 space-y-4">
-              {companyLogoData ? (
-                <div className="space-y-4">
-                  <div className="p-4 bg-white rounded-xl border border-green-200">
-                    <p className="text-sm text-green-800 font-medium">Logo loaded successfully</p>
-                    <p className="text-xs text-green-600 mt-1">Path: /storage/logo/LoringMargi.png</p>
-                  </div>
-                  <p className="text-xs text-gray-500 italic">Note: Patika logo is hardcoded and cannot be changed</p>
-                  <label className="inline-block cursor-pointer group">
-                    <span className="btn-primary px-8 py-3 text-white rounded-xl font-medium inline-flex items-center gap-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                      Change Logo
-                    </span>
-                    <input type="file" className="hidden" accept="image/*" onChange={handleCompanyLogoUpload} />
-                  </label>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
-                    <p className="text-sm text-amber-800 font-medium">⚠ Logo not found in storage</p>
-                  </div>
-                  <label className="inline-block cursor-pointer">
-                    <span className="btn-primary px-8 py-3 text-white rounded-xl font-medium inline-flex items-center gap-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                      Upload Logo
-                    </span>
-                    <input type="file" className="hidden" accept="image/*" onChange={handleCompanyLogoUpload} />
-                  </label>
-                </div>
-              )}
+            <div className="w-32 sm:w-40 transform transition hover:scale-105">
+              <img src={headerLogo2} alt="Patika" className="w-full h-auto" onError={(e) => { e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60"%3E%3Crect width="200" height="60" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23666" font-family="Arial" font-size="12"%3ELogo 2%3C/text%3E%3C/svg%3E' }} />
             </div>
           </div>
         </div>
 
-        {/* Excel & Form Upload */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-8">
-          <div className="card-elegant rounded-2xl shadow-lg p-6 sm:p-8 animate-slide-in-right">
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
-              <svg className="w-6 h-6 text-[#BF9952]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              Upload Excel File
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          {/* Title Section */}
+          <div className="text-center mb-8 sm:mb-12 animate-fade-in-up">
+            <h1 className="text-4xl sm:text-6xl font-bold bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text text-transparent mb-3 sm:mb-4">CV Generator</h1>
+            <p className="text-sm sm:text-lg text-gray-600 font-light max-w-3xl mx-auto">Upload Logo, Excel & Photo or Complete the Form - Generate CV PDF Format PT. Loring Margi International</p>
+          </div>
+
+          {/* Logo Section */}
+          <div className="card-elegant rounded-2xl shadow-lg p-6 sm:p-10 mb-6 sm:mb-8 animate-scale-in">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#BF9952] to-[#D4AF6A] rounded-full"></span>
+              Company Logo
             </h2>
-            <label className="upload-zone block border-2 border-dashed border-gray-300 rounded-2xl p-10 sm:p-14 text-center cursor-pointer">
-              <div className="text-gray-600 space-y-3">
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-[#BF9952] to-[#D4AF6A] rounded-full flex items-center justify-center transform transition hover:scale-110">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                </div>
-                <p className="font-medium text-base">Click to Upload or Drag & Drop</p>
-                <p className="text-xs text-gray-500">Excel File (.xlsx, .xls)</p>
-              </div>
-              <input type="file" className="hidden" accept=".xlsx,.xls" onChange={handleFileUpload} />
-            </label>
-            {uploadProgress && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#BF9952] border-t-transparent"></div>
-                  <span className="text-sm text-blue-700 font-medium">Processing...</span>
-                </div>
-              </div>
-            )}
-            {excelData.length > 0 && !uploadProgress && (
-              <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 animate-scale-in">
-                <div className="flex items-center gap-3">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  <span className="text-sm text-green-700 font-semibold">{excelData.length} data successfully imported</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="card-elegant rounded-2xl shadow-lg p-6 sm:p-8 animate-slide-in-right" style={{ animationDelay: '0.1s' }}>
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
-              <svg className="w-6 h-6 text-[#BF9952]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-              Complete the Form
-            </h2>
-            <div className="flex flex-col items-center justify-center h-full space-y-6">
-              {macImageData ? (
-                <div className="transform transition hover:scale-105">
-                  <img src={macImageData} alt="Computer" className="w-full max-w-xs h-auto drop-shadow-2xl" />
-                </div>
-              ) : (
-                <div className="w-full max-w-xs h-40 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center text-gray-400 text-sm shimmer">Mac Image</div>
-              )}
-              <Link href="/form" className="btn-primary px-10 py-4 text-white rounded-xl font-medium flex items-center gap-3 text-base">
-                Enter the Form
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Bulk Action Bar */}
-        {excelData.length > 0 && (
-          <div className="card-elegant rounded-2xl shadow-lg p-6 mb-6 animate-scale-in">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={toggleSelectAll}
-                  className="px-6 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-xl font-medium text-sm transition-all flex items-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {selectedForBulk.length === excelData.length ? 'Deselect All' : 'Select All'}
-                </button>
-                <span className="text-sm text-gray-600 font-medium">
-                  {selectedForBulk.length} of {excelData.length} selected
-                </span>
-              </div>
-              <button
-                onClick={bulkPrintPDF}
-                disabled={selectedForBulk.length === 0 || isBulkGenerating}
-                className="btn-primary px-8 py-3 text-white rounded-xl font-semibold shadow-lg hover:shadow-2xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2"
-              >
-                {isBulkGenerating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                    Printing {bulkProgress.current}/{bulkProgress.total}
-                  </>
+            <div className="flex flex-col lg:flex-row items-center gap-8">
+              <div className="w-56 h-56 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl shadow-2xl transform transition hover:scale-105">
+                {companyLogoData ? (
+                  <img src={companyLogoData} alt="Logo" className="max-w-full max-h-full object-contain p-6" />
                 ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                    </svg>
-                    Bulk Print to PDF ({selectedForBulk.length})
-                  </>
+                  <div className="text-white text-sm font-light shimmer">Loading...</div>
                 )}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Photo Upload & Selection */}
-        {excelData.length > 0 && (
-          <>
-            <div className="card-elegant rounded-2xl shadow-lg p-6 sm:p-10 mb-8 animate-scale-in">
-              <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-8 flex items-center gap-3">
-                <span className="w-2 h-8 bg-gradient-to-b from-[#BF9952] to-[#D4AF6A] rounded-full"></span>
-                Upload Photos & Select Data
-              </h2>
-              <div className="space-y-4">
-                {excelData.map((person, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-5 border-2 rounded-2xl transition-all duration-300 ${selectedPerson === person
-                        ? 'selected-card'
-                        : 'border-gray-200 hover:border-gray-300 hover:shadow-lg'
-                      }`}
-                  >
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-5">
-                      <div className="flex items-center gap-4 flex-1">
-                        <input
-                          type="checkbox"
-                          checked={selectedForBulk.includes(idx)}
-                          onChange={() => toggleBulkSelection(idx)}
-                          className="w-5 h-5 text-[#BF9952] border-gray-300 rounded focus:ring-[#BF9952] cursor-pointer"
-                        />
-                        <div
-                          className="flex-1 text-center sm:text-left cursor-pointer"
-                          onClick={() => setSelectedPerson(person)}
-                        >
-                          <h3 className="font-semibold text-lg sm:text-xl text-gray-900 mb-2">{person.full_name || 'No Name'}</h3>
-                          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-sm text-gray-600">
-                            <span className="px-3 py-1 bg-gray-100 rounded-full">{person.date_of_birth || 'No DOB'}</span>
-                            <span className="px-3 py-1 bg-gray-100 rounded-full">{person.nationality || 'No Nationality'}</span>
-                            <span className="px-3 py-1 bg-gray-100 rounded-full">{person.position_applied || 'No Position'}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        {photos[idx] ? (
-                          <div className="relative photo-card">
-                            <img src={photos[idx]} alt="Preview" className="w-20 h-24 object-cover border-2 border-gray-300 rounded-xl shadow-lg" />
-                            <button
-                              onClick={(e) => { e.stopPropagation(); removePhoto(idx); }}
-                              className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 transition shadow-lg flex items-center justify-center font-bold"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ) : (
-                          <label className="cursor-pointer" onClick={(e) => e.stopPropagation()}>
-                            <div className="px-5 py-3 bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-xl text-sm hover:from-gray-100 hover:to-gray-50 hover:border-[#BF9952] transition font-medium text-gray-700">
-                              Upload Photo
-                            </div>
-                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handlePhotoUpload(idx, e)} />
-                          </label>
-                        )}
-                        {selectedPerson === person && (
-                          <div className="px-4 py-2 bg-gradient-to-r from-[#BF9952] to-[#D4AF6A] text-white rounded-xl text-sm font-semibold shadow-lg animate-scale-in">
-                            Selected
-                          </div>
-                        )}
-                      </div>
+              </div>
+              <div className="flex-1 space-y-4">
+                {companyLogoData ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-white rounded-xl border border-green-200">
+                      <p className="text-sm text-green-800 font-medium">Logo loaded successfully</p>
+                      <p className="text-xs text-green-600 mt-1">Path: /storage/logo/LoringMargi.png</p>
                     </div>
+                    <p className="text-xs text-gray-500 italic">Note: Patika logo is hardcoded and cannot be changed</p>
+                    <label className="inline-block cursor-pointer group">
+                      <span className="btn-primary px-8 py-3 text-white rounded-xl font-medium inline-flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        Change Logo
+                      </span>
+                      <input type="file" className="hidden" accept="image/*" onChange={handleCompanyLogoUpload} />
+                    </label>
                   </div>
-                ))}
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+                      <p className="text-sm text-amber-800 font-medium">⚠ Logo not found in storage</p>
+                    </div>
+                    <label className="inline-block cursor-pointer">
+                      <span className="btn-primary px-8 py-3 text-white rounded-xl font-medium inline-flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        Upload Logo
+                      </span>
+                      <input type="file" className="hidden" accept="image/*" onChange={handleCompanyLogoUpload} />
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
+          </div>
 
-            {/* Individual Action Buttons */}
-            {selectedPerson && (
-              <div className="card-elegant rounded-2xl shadow-lg p-6 sm:p-10 animate-scale-in">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-8 flex items-center gap-3">
-                  <span className="w-2 h-8 bg-gradient-to-b from-[#BF9952] to-[#D4AF6A] rounded-full"></span>
-                  Individual Actions: <span className="text-[#BF9952]">{selectedPerson.full_name}</span>
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {/* Excel & Form Upload */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-8">
+            <div className="card-elegant rounded-2xl shadow-lg p-6 sm:p-8 animate-slide-in-right">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
+                <svg className="w-6 h-6 text-[#BF9952]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Upload Excel File
+              </h2>
+              <label className="upload-zone block border-2 border-dashed border-gray-300 rounded-2xl p-10 sm:p-14 text-center cursor-pointer">
+                <div className="text-gray-600 space-y-3">
+                  <div className="w-16 h-16 mx-auto bg-gradient-to-br from-[#BF9952] to-[#D4AF6A] rounded-full flex items-center justify-center transform transition hover:scale-110">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                  </div>
+                  <p className="font-medium text-base">Click to Upload or Drag & Drop</p>
+                  <p className="text-xs text-gray-500">Excel File (.xlsx, .xls)</p>
+                </div>
+                <input type="file" className="hidden" accept=".xlsx,.xls" onChange={handleFileUpload} />
+              </label>
+              {uploadProgress && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#BF9952] border-t-transparent"></div>
+                    <span className="text-sm text-blue-700 font-medium">Processing...</span>
+                  </div>
+                </div>
+              )}
+              {excelData.length > 0 && !uploadProgress && (
+                <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 animate-scale-in">
+                  <div className="flex items-center gap-3">
+                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span className="text-sm text-green-700 font-semibold">{excelData.length} data successfully imported</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="card-elegant rounded-2xl shadow-lg p-6 sm:p-8 animate-slide-in-right" style={{ animationDelay: '0.1s' }}>
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
+                <svg className="w-6 h-6 text-[#BF9952]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                Complete the Form
+              </h2>
+              <div className="flex flex-col items-center justify-center h-full space-y-6">
+                {macImageData ? (
+                  <div className="transform transition hover:scale-105">
+                    <img src={macImageData} alt="Computer" className="w-full max-w-xs h-auto drop-shadow-2xl" />
+                  </div>
+                ) : (
+                  <div className="w-full max-w-xs h-40 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center text-gray-400 text-sm shimmer">Mac Image</div>
+                )}
+                <Link href="/form" className="btn-primary px-10 py-4 text-white rounded-xl font-medium flex items-center gap-3 text-base">
+                  Enter the Form
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Bulk Action Bar */}
+          {excelData.length > 0 && (
+            <div className="card-elegant rounded-2xl shadow-lg p-6 mb-6 animate-scale-in">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
                   <button
-                    onClick={previewCV}
-                    className="px-8 py-4 bg-gradient-to-r from-gray-100 to-gray-200 border-2 border-gray-300 text-gray-700 rounded-xl hover:from-gray-200 hover:to-gray-100 hover:border-gray-400 transition-all font-semibold shadow-md hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2"
+                    onClick={toggleSelectAll}
+                    className="px-6 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-xl font-medium text-sm transition-all flex items-center gap-2"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                    Preview CV
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {selectedForBulk.length === excelData.length ? 'Deselect All' : 'Select All'}
                   </button>
+                  <span className="text-sm text-gray-600 font-medium">
+                    {selectedForBulk.length} of {excelData.length} selected
+                  </span>
+                </div>
+                <div className="flex gap-3">
                   <button
-                    onClick={downloadPDF}
-                    disabled={isGenerating}
-                    className="btn-primary px-8 py-4 text-white rounded-xl font-semibold shadow-lg hover:shadow-2xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                    onClick={bulkPrintPDF}
+                    disabled={selectedForBulk.length === 0 || isBulkGenerating}
+                    className="btn-primary px-8 py-3 text-white rounded-xl font-semibold shadow-lg hover:shadow-2xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2"
                   >
-                    {isGenerating ? (
+                    {isBulkGenerating ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                        Generating...
+                        Printing {bulkProgress.current}/{bulkProgress.total}
                       </>
                     ) : (
                       <>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                        Print to PDF
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Bulk Print PDF ({selectedForBulk.length})
                       </>
                     )}
                   </button>
-                  <button
-                    onClick={downloadHTML}
-                    className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all font-semibold shadow-lg hover:shadow-2xl transform hover:-translate-y-1 flex items-center justify-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    Download HTML
-                  </button>
                 </div>
               </div>
-            )}
-          </>
-        )}
-      </div>
+            </div>
+          )}
 
-      {/* Footer */}
-      <div className="bg-gradient-to-r from-[#BF9952] via-[#D4AF6A] to-[#BF9952] text-white py-8 mt-16 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center space-y-2">
-          <p className="text-sm font-light">Copyright © 2025 Loring Margi International</p>
-          <p className="text-xs opacity-90">Powered by <span className="font-semibold">CyberLabs</span></p>
+          {excelData.length > 0 && (
+            <>
+              <div className="card-elegant rounded-2xl shadow-lg p-6 sm:p-10 mb-8 animate-scale-in">
+                <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-8 flex items-center gap-3">
+                  <span className="w-2 h-8 bg-gradient-to-b from-[#BF9952] to-[#D4AF6A] rounded-full"></span>
+                  Upload Photos & Select Data
+                </h2>
+                <div className="space-y-4">
+                  {excelData.map((person, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-5 border-2 rounded-2xl transition-all duration-300 ${selectedPerson === person
+                        ? 'selected-card'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-lg'
+                        }`}
+                    >
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-5">
+                        <div className="flex items-center gap-4 flex-1">
+                          <input
+                            type="checkbox"
+                            checked={selectedForBulk.includes(idx)}
+                            onChange={() => toggleBulkSelection(idx)}
+                            className="w-5 h-5 text-[#BF9952] border-gray-300 rounded focus:ring-[#BF9952] cursor-pointer"
+                          />
+                          <div
+                            className="flex-1 text-center sm:text-left cursor-pointer"
+                            onClick={() => setSelectedPerson(person)}
+                          >
+                            <h3 className="font-semibold text-lg sm:text-xl text-gray-900 mb-2">{person.full_name || 'No Name'}</h3>
+                            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-sm text-gray-600">
+                              <span className="px-3 py-1 bg-gray-100 rounded-full">{person.date_of_birth || 'No DOB'}</span>
+                              <span className="px-3 py-1 bg-gray-100 rounded-full">{person.nationality || 'No Nationality'}</span>
+                              <span className="px-3 py-1 bg-gray-100 rounded-full">{person.position_applied || 'No Position'}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          {photos[idx] ? (
+                            <div className="relative photo-card">
+                              <img src={photos[idx]} alt="Preview" className="w-20 h-24 object-cover border-2 border-gray-300 rounded-xl shadow-lg" />
+                              <button
+                                onClick={(e) => { e.stopPropagation(); removePhoto(idx); }}
+                                className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 transition shadow-lg flex items-center justify-center font-bold"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                              <div className="px-5 py-3 bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-xl text-sm hover:from-gray-100 hover:to-gray-50 hover:border-[#BF9952] transition font-medium text-gray-700">
+                                Upload Photo
+                              </div>
+                              <input type="file" className="hidden" accept="image/*" onChange={(e) => handlePhotoUpload(idx, e)} />
+                            </label>
+                          )}
+                          {selectedPerson === person && (
+                            <div className="px-4 py-2 bg-gradient-to-r from-[#BF9952] to-[#D4AF6A] text-white rounded-xl text-sm font-semibold shadow-lg animate-scale-in">
+                              Selected
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Individual Action Buttons */}
+              {selectedPerson && (
+                <div className="card-elegant rounded-2xl shadow-lg p-6 sm:p-10 animate-scale-in">
+                  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-8 flex items-center gap-3">
+                    <span className="w-2 h-8 bg-gradient-to-b from-[#BF9952] to-[#D4AF6A] rounded-full"></span>
+                    Individual Actions: <span className="text-[#BF9952]">{selectedPerson.full_name}</span>
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <button
+                      onClick={previewCV}
+                      className="px-8 py-4 bg-gradient-to-r from-gray-100 to-gray-200 border-2 border-gray-300 text-gray-700 rounded-xl hover:from-gray-200 hover:to-gray-100 hover:border-gray-400 transition-all font-semibold shadow-md hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      Preview CV
+                    </button>
+
+
+
+                    <button
+                      onClick={downloadPDF}
+                      disabled={isGenerating}
+                      className="btn-primary px-8 py-4 text-white rounded-xl font-semibold shadow-lg hover:shadow-2xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                          Print to PDF
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={downloadHTML}
+                      className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all font-semibold shadow-lg hover:shadow-2xl transform hover:-translate-y-1 flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                      Download HTML
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
-      </div>
+
+        {/* Footer */}
+        <div className="bg-gradient-to-r from-[#BF9952] via-[#D4AF6A] to-[#BF9952] text-white py-8 mt-16 shadow-2xl">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center space-y-2">
+            <p className="text-sm font-light">Copyright © 2025 Loring Margi International</p>
+            <p className="text-xs opacity-90">Powered by <span className="font-semibold">CyberLabs</span></p>
+          </div>
+        </div>
 
       </div>
     </div>
