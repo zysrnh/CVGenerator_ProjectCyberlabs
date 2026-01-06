@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { Link } from '@inertiajs/react';
+
 const CVImportGenerator = () => {
   const [excelData, setExcelData] = useState([]);
   const [selectedPerson, setSelectedPerson] = useState(null);
@@ -10,14 +11,33 @@ const CVImportGenerator = () => {
   const [patikaLogoData, setPatikaLogoData] = useState(null);
   const [macImageData, setMacImageData] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(false);
-
-  // NEW: States untuk bulk action
   const [selectedForBulk, setSelectedForBulk] = useState([]);
   const [isBulkGenerating, setIsBulkGenerating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
 
+  // NEW: Welcome screen states
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+
   const headerLogo1 = '/storage/logo/LoringMargi.png';
   const headerLogo2 = '/storage/logo/Patika.jpeg';
+
+  // Welcome screen loading effect
+  useEffect(() => {
+    if (showWelcome) {
+      const interval = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            setTimeout(() => setShowWelcome(false), 500);
+            return 100;
+          }
+          return prev + 2;
+        });
+      }, 30);
+      return () => clearInterval(interval);
+    }
+  }, [showWelcome]);
 
   useEffect(() => {
     const loadImages = async () => {
@@ -101,7 +121,6 @@ const CVImportGenerator = () => {
     });
   };
 
-  // NEW: Toggle bulk selection
   const toggleBulkSelection = (idx) => {
     setSelectedForBulk(prev => {
       if (prev.includes(idx)) {
@@ -112,7 +131,6 @@ const CVImportGenerator = () => {
     });
   };
 
-  // NEW: Select all / deselect all
   const toggleSelectAll = () => {
     if (selectedForBulk.length === excelData.length) {
       setSelectedForBulk([]);
@@ -245,7 +263,6 @@ const CVImportGenerator = () => {
     }
   };
 
-  // NEW: Bulk print to PDF
   const bulkPrintPDF = async () => {
     if (selectedForBulk.length === 0) {
       alert('Please select at least one person to print');
@@ -276,12 +293,9 @@ const CVImportGenerator = () => {
 
         await new Promise(resolve => setTimeout(resolve, 500));
         iframe.contentWindow.print();
-
-        // Wait for print dialog to be handled
         await new Promise(resolve => setTimeout(resolve, 2000));
         document.body.removeChild(iframe);
 
-        // Small delay between prints
         if (i < selectedForBulk.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
@@ -331,10 +345,40 @@ const CVImportGenerator = () => {
           0% { background-position: -1000px 0; }
           100% { background-position: 1000px 0; }
         }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(191, 153, 82, 0.3); }
+          50% { box-shadow: 0 0 40px rgba(191, 153, 82, 0.6); }
+        }
+
+        @keyframes slideDown {
+          from { 
+            opacity: 0;
+            transform: translateY(-100%);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
         
         .animate-fade-in-up { animation: fadeInUp 0.6s ease-out; }
         .animate-slide-in-right { animation: slideInRight 0.6s ease-out; }
         .animate-scale-in { animation: scaleIn 0.5s ease-out; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-glow { animation: glow 2s ease-in-out infinite; }
+        .animate-slide-down { animation: slideDown 0.8s ease-out; }
+        .animate-fade-out { animation: fadeOut 0.5s ease-out forwards; }
         
         .btn-primary {
           background: linear-gradient(135deg, #BF9952 0%, #D4AF6A 100%);
@@ -392,8 +436,78 @@ const CVImportGenerator = () => {
           background: linear-gradient(135deg, rgba(191, 153, 82, 0.05) 0%, rgba(191, 153, 82, 0.02) 100%);
           box-shadow: 0 8px 30px rgba(191, 153, 82, 0.2);
         }
+
+        .welcome-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .progress-bar {
+          width: 100%;
+          height: 4px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 2px;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #BF9952, #D4AF6A, #BF9952);
+          background-size: 200% 100%;
+          animation: shimmer 2s infinite;
+          transition: width 0.3s ease;
+        }
       `}</style>
 
+      {/* Welcome Screen */}
+      {showWelcome && (
+        <div className={`welcome-overlay ${loadingProgress === 100 ? 'animate-fade-out' : ''}`}>
+          <div className="text-center space-y-8 px-4">
+            <div className="animate-float animate-glow">
+              <div className="w-32 h-32 mx-auto bg-gradient-to-br from-[#BF9952] to-[#D4AF6A] rounded-3xl flex items-center justify-center shadow-2xl">
+                <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="space-y-3 animate-slide-down">
+              <h1 className="text-5xl sm:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#BF9952] via-[#D4AF6A] to-[#BF9952]">
+                CV Generator
+              </h1>
+              <p className="text-xl sm:text-2xl text-gray-400 font-light">
+                PT. Loring Margi International
+              </p>
+            </div>
+
+            <div className="w-80 max-w-full mx-auto space-y-3">
+              <div className="progress-bar">
+                <div className="progress-fill" style={{ width: `${loadingProgress}%` }}></div>
+              </div>
+              <p className="text-gray-400 text-sm font-medium">
+                Loading... {loadingProgress}%
+              </p>
+            </div>
+
+            <p className="text-gray-500 text-sm max-w-md mx-auto animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
+              Professional CV Management System
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className={`transition-opacity duration-500 ${showWelcome ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+      
       {/* Header */}
       <div className="bg-white border-b shadow-sm animate-fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex items-center justify-between">
@@ -517,7 +631,7 @@ const CVImportGenerator = () => {
           </div>
         </div>
 
-        {/* NEW: Bulk Action Bar */}
+        {/* Bulk Action Bar */}
         {excelData.length > 0 && (
           <div className="card-elegant rounded-2xl shadow-lg p-6 mb-6 animate-scale-in">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -576,7 +690,6 @@ const CVImportGenerator = () => {
                       }`}
                   >
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-5">
-                      {/* NEW: Checkbox for bulk selection */}
                       <div className="flex items-center gap-4 flex-1">
                         <input
                           type="checkbox"
@@ -679,6 +792,8 @@ const CVImportGenerator = () => {
           <p className="text-sm font-light">Copyright © 2025 Loring Margi International</p>
           <p className="text-xs opacity-90">Powered by <span className="font-semibold">CyberLabs</span></p>
         </div>
+      </div>
+
       </div>
     </div>
   );
