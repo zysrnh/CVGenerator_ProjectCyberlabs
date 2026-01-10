@@ -30,4 +30,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::get('/dashboard/{id}', [DashboardController::class, 'show']);
     Route::delete('/cv-submissions/{id}', [CvSubmissionController::class, 'destroy']);
+
+    Route::get('/dashboard/{id}/edit', [DashboardController::class, 'edit'])->name('dashboard.edit');
+Route::put('/dashboard/{id}', [DashboardController::class, 'update'])->name('dashboard.update');
+Route::post('/dashboard/{id}', [DashboardController::class, 'update'])->name('dashboard.update.post');
+
 });
