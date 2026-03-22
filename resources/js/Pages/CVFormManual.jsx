@@ -304,7 +304,7 @@ const CVFormManual = () => {
 
     const prevStep = () => {
         if (currentStep > 1) setCurrentStep(currentStep - 1);
-        else window.location.href = '/';
+else window.location.href = '/import';
     };
 
     // PART 2 - UI RENDER (Lanjutan dari Part 1)
