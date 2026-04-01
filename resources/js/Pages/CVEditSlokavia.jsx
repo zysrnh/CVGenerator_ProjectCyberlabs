@@ -36,7 +36,7 @@ const CVEditSlokavia = ({ cv }) => {
     useEffect(() => {
         const loadEuLogo = async () => {
             try {
-                const response = await fetch('/images/European.jpg');
+                const response = await fetch('/storage/logo/euro.png');
                 const blob = await response.blob();
                 const reader = new FileReader();
                 reader.onloadend = () => setEuLogoData(reader.result);
@@ -75,120 +75,31 @@ const CVEditSlokavia = ({ cv }) => {
         skills: cv.skills?.length > 0 ? cv.skills.map(s => s.skill) : [''],
     });
 
-    // ── NOTIFICATION (clean white card style) ──────────────────────────────
+    // ── NOTIFICATION ──────────────────────────────────────────────────────
     const showNotification = (type, title, message) => {
         if (!document.getElementById('notification-styles')) {
             const style = document.createElement('style');
             style.id = 'notification-styles';
             style.textContent = `
-                @keyframes notifIn {
-                    from { opacity: 0; transform: translateY(-14px) scale(0.95); }
-                    to   { opacity: 1; transform: translateY(0)    scale(1);    }
-                }
-                @keyframes notifOut {
-                    from { opacity: 1; transform: translateY(0)    scale(1);    }
-                    to   { opacity: 0; transform: translateY(-14px) scale(0.95); }
-                }
-                @keyframes progressShrink {
-                    from { width: 100%; }
-                    to   { width: 0%;   }
-                }
+                @keyframes notifIn { from { opacity: 0; transform: translateY(-14px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+                @keyframes notifOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-14px) scale(0.95); } }
+                @keyframes progressShrink { from { width: 100%; } to { width: 0%; } }
                 [data-notif] .notif-close:hover { color: #374151 !important; background: #f3f4f6 !important; }
             `;
             document.head.appendChild(style);
         }
-
         const isSuccess = type === 'success';
         const accent      = isSuccess ? '#BF9952'               : '#ef4444';
         const accentLight = isSuccess ? 'rgba(191,153,82,0.12)' : 'rgba(239,68,68,0.10)';
         const accentBar   = isSuccess ? '#D4AF6A'               : '#f87171';
         const iconPath    = isSuccess ? 'M5 13l4 4L19 7'        : 'M6 18L18 6M6 6l12 12';
-
         const el = document.createElement('div');
         el.setAttribute('data-notif', '1');
-        el.style.cssText = `
-            position: fixed;
-            top: 24px;
-            right: 24px;
-            min-width: 320px;
-            max-width: 400px;
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-left: 4px solid ${accent};
-            border-radius: 14px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
-            z-index: 9999;
-            font-family: 'Poppins', sans-serif;
-            overflow: hidden;
-            animation: notifIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
-        `;
-
-        el.innerHTML = `
-            <div style="padding: 16px 16px 14px; display: flex; align-items: flex-start; gap: 12px;">
-                <div style="
-                    flex-shrink: 0;
-                    width: 38px; height: 38px;
-                    background: ${accentLight};
-                    border-radius: 10px;
-                    display: flex; align-items: center; justify-content: center;
-                ">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                         stroke="${accent}" stroke-width="2.5"
-                         stroke-linecap="round" stroke-linejoin="round">
-                        <path d="${iconPath}"/>
-                    </svg>
-                </div>
-                <div style="flex: 1; min-width: 0; padding-top: 2px;">
-                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: #111827; line-height: 1.3;">
-                        ${title}
-                    </p>
-                    <p style="margin: 5px 0 0; font-size: 12.5px; color: #6b7280; line-height: 1.45;">
-                        ${message}
-                    </p>
-                </div>
-                <button
-                    class="notif-close"
-                    onclick="var p=this.closest('[data-notif]');p.style.animation='notifOut 0.28s ease forwards';setTimeout(()=>p.remove(),280);"
-                    style="
-                        flex-shrink: 0;
-                        background: none;
-                        border: none;
-                        cursor: pointer;
-                        color: #9ca3af;
-                        padding: 4px;
-                        margin-top: -2px;
-                        border-radius: 6px;
-                        transition: color 0.15s, background 0.15s;
-                        display: flex; align-items: center; justify-content: center;
-                    "
-                >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2.5"
-                         stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <div style="height: 3px; background: #f3f4f6;">
-                <div style="
-                    height: 100%;
-                    background: ${accentBar};
-                    border-radius: 0 0 0 4px;
-                    animation: progressShrink 3s linear forwards;
-                "></div>
-            </div>
-        `;
-
+        el.style.cssText = `position:fixed;top:24px;right:24px;min-width:320px;max-width:400px;background:#fff;border:1px solid #e5e7eb;border-left:4px solid ${accent};border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.10);z-index:9999;font-family:'Poppins',sans-serif;overflow:hidden;animation:notifIn .35s cubic-bezier(.34,1.56,.64,1) both;`;
+        el.innerHTML = `<div style="padding:16px 16px 14px;display:flex;align-items:flex-start;gap:12px;"><div style="flex-shrink:0;width:38px;height:38px;background:${accentLight};border-radius:10px;display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="${iconPath}"/></svg></div><div style="flex:1;min-width:0;padding-top:2px;"><p style="margin:0;font-size:14px;font-weight:600;color:#111827;">${title}</p><p style="margin:5px 0 0;font-size:12.5px;color:#6b7280;">${message}</p></div><button class="notif-close" onclick="var p=this.closest('[data-notif]');p.style.animation='notifOut .28s ease forwards';setTimeout(()=>p.remove(),280);" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:#9ca3af;padding:4px;border-radius:6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div style="height:3px;background:#f3f4f6;"><div style="height:100%;background:${accentBar};animation:progressShrink 3s linear forwards;"></div></div>`;
         document.body.appendChild(el);
-
-        setTimeout(() => {
-            if (el.parentNode) {
-                el.style.animation = 'notifOut 0.28s ease forwards';
-                setTimeout(() => el.remove(), 280);
-            }
-        }, 3000);
+        setTimeout(() => { if (el.parentNode) { el.style.animation = 'notifOut .28s ease forwards'; setTimeout(() => el.remove(), 280); } }, 3000);
     };
-    // ──────────────────────────────────────────────────────────────────────
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -277,58 +188,25 @@ const CVEditSlokavia = ({ cv }) => {
         };
 
         const workSection = person.workExperiences.map(work => {
-            const respItems = (Array.isArray(work.responsibilities) ? work.responsibilities : [])
-                .filter(r => r && r.trim());
-            return `
-            <div class="section-block">
-                <div class="job-title">${work.position || ''} - <span class="employer">${work.employer || ''}</span></div>
-                <div class="date-range">${work.start_date || ''}${work.leaving_date ? ' \u2013 ' + work.leaving_date : ' \u2013 Present'}</div>
-                ${respItems.length > 0 ? `<ul class="bullet-list">${respItems.map(r => `<li>${r.trim()}</li>`).join('')}</ul>` : ''}
-            </div>`;
+            const respItems = (Array.isArray(work.responsibilities) ? work.responsibilities : []).filter(r => r && r.trim());
+            return `<div class="section-block"><div class="job-title">${work.position || ''} - <span class="employer">${work.employer || ''}</span></div><div class="date-range">${work.start_date || ''}${work.leaving_date ? ' \u2013 ' + work.leaving_date : ' \u2013 Present'}</div>${respItems.length > 0 ? `<ul class="bullet-list">${respItems.map(r => `<li>${r.trim()}</li>`).join('')}</ul>` : ''}</div>`;
         }).join('');
 
-        const eduSection = person.educations.map(edu => `
-            <div class="section-block">
-                <div class="date-range">${edu.start_date || ''}${edu.graduation_date ? ' \u2013 ' + edu.graduation_date : ''}</div>
-                <div class="edu-school">${edu.school || ''}</div>
-                ${edu.field_of_study ? `<div class="field-study"><strong>Field of study:</strong> ${edu.field_of_study}</div>` : ''}
-            </div>
-        `).join('');
+        const eduSection = person.educations.map(edu => `<div class="section-block"><div class="date-range">${edu.start_date || ''}${edu.graduation_date ? ' \u2013 ' + edu.graduation_date : ''}</div><div class="edu-school">${edu.school || ''}</div>${edu.field_of_study ? `<div class="field-study"><strong>Field of study:</strong> ${edu.field_of_study}</div>` : ''}</div>`).join('');
 
-        const langRows = person.languages.map(lang => `
-            <tr>
-                <td class="lang-name"><strong>${lang.name || ''}</strong></td>
-                <td class="cefr-cell">${lang.listening || ''}</td>
-                <td class="cefr-cell">${lang.reading || ''}</td>
-                <td class="cefr-cell">${lang.spoken_production || ''}</td>
-                <td class="cefr-cell">${lang.spoken_interaction || ''}</td>
-                <td class="cefr-cell">${lang.writing || ''}</td>
-            </tr>
-        `).join('');
+        const langRows = person.languages.map(lang => `<tr><td class="lang-name"><strong>${lang.name || ''}</strong></td><td class="cefr-cell">${lang.listening || ''}</td><td class="cefr-cell">${lang.reading || ''}</td><td class="cefr-cell">${lang.spoken_production || ''}</td><td class="cefr-cell">${lang.spoken_interaction || ''}</td><td class="cefr-cell">${lang.writing || ''}</td></tr>`).join('');
 
-        const certSection = person.certifications.filter(c => c.title).map(cert => `
-            <div class="section-block">
-                <div class="cert-year">${cert.year || ''}</div>
-                <div class="cert-title">${cert.title || ''}</div>
-                ${cert.description ? `<p class="cert-desc">${cert.description}</p>` : ''}
-                ${cert.mode ? `<div class="field-study"><strong>Mode of learning:</strong> ${cert.mode}</div>` : ''}
-            </div>
-        `).join('');
+        const certSection = person.certifications.filter(c => c.title).map(cert => `<div class="section-block"><div class="cert-year">${cert.year || ''}</div><div class="cert-title">${cert.title || ''}</div>${cert.description ? `<p class="cert-desc">${cert.description}</p>` : ''}${cert.mode ? `<div class="field-study"><strong>Mode of learning:</strong> ${cert.mode}</div>` : ''}</div>`).join('');
 
         const skillsText = person.skills.filter(s => s).join(' | ');
 
-        return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title></title>
-<style>
+        return `<!DOCTYPE html><html><head><meta charset="utf-8"><title></title><style>
 @page { size: A4; margin: 15mm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #111111; background: #fff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 .ep-header { display: flex; align-items: flex-start; gap: 18px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 2px solid #cccccc; page-break-inside: avoid; }
 .ep-photo-wrap { flex-shrink: 0; width: 90px; height: 90px; min-width: 90px; min-height: 90px; border-radius: 50%; overflow: hidden; border: 2px solid #ccc; background: #f0f0f0; display: flex; align-items: center; justify-content: center; }
-.ep-photo-wrap img { width: 90px !important; height: 90px !important; min-width: 90px; min-height: 90px; max-width: 90px; max-height: 90px; object-fit: cover; border-radius: 50%; display: block; }
+.ep-photo-wrap img { width: 90px !important; height: 90px !important; object-fit: cover; border-radius: 50%; display: block; }
 .ep-header-info { flex: 1; padding-top: 4px; }
 .ep-name { font-size: 18pt; font-weight: 700; color: #111111; line-height: 1.1; margin-bottom: 8px; }
 .ep-meta-row { font-size: 8.5pt; color: #222222; margin-bottom: 3px; display: flex; align-items: center; flex-wrap: wrap; }
@@ -339,7 +217,6 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #111111
 .ep-meta-contact span { margin-right: 16px; }
 .ep-logo-area { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-start; gap: 8px; padding-top: 4px; }
 .ep-europass-logo { display: flex; align-items: center; gap: 8px; }
-.ep-europass-text { font-size: 16pt; font-weight: 400; color: #5a4fcf; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
 .section-title-ep { font-size: 9pt; font-weight: 700; color: #1c3557; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1.5px solid #1c3557; padding-bottom: 3px; margin: 14px 0 8px 0; page-break-after: avoid; }
 .section-content { padding-left: 2px; }
 .section-block { margin-bottom: 10px; page-break-inside: avoid; }
@@ -364,74 +241,27 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #111111
 .cert-desc { font-size: 8.5pt; color: #222222; margin-top: 3px; line-height: 1.4; }
 .skills-text { font-size: 8.5pt; color: #111111; line-height: 1.6; }
 .about-text { font-size: 8.5pt; color: #111111; line-height: 1.55; }
-</style>
-</head>
-<body>
+</style></head><body>
 <div class="ep-header">
-    <div class="ep-photo-wrap">
-        ${photo
-          ? `<img src="${photo}" alt="Photo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"/>`
-          : `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="1.2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`
-        }
-    </div>
-    <div class="ep-header-info">
-        <div class="ep-name">${person.full_name || ''}</div>
-        <div class="ep-meta-row">
-            ${person.date_of_birth ? `<span class="ep-meta-item"><strong>Date of birth:</strong>&nbsp;${formatDOB(person.date_of_birth)}</span>` : ''}
-            ${person.nationality ? `<span class="ep-meta-divider"></span><span class="ep-meta-item"><strong>Nationality:</strong>&nbsp;${person.nationality}</span>` : ''}
-            ${person.gender ? `<span class="ep-meta-divider"></span><span class="ep-meta-item"><strong>Gender:</strong>&nbsp;${person.gender}</span>` : ''}
-        </div>
-        ${(person.address || person.mobile_phone || person.email_address) ? `
-        <div class="ep-meta-contact">
-            ${person.address ? `<span>${person.address}</span>` : ''}
-            ${person.mobile_phone ? `<span>${person.mobile_phone}</span>` : ''}
-            ${person.email_address ? `<span>${person.email_address}</span>` : ''}
-        </div>` : ''}
-    </div>
-    <div class="ep-logo-area">
-        <div class="ep-europass-logo">
-            ${euLogo ? `<img src="${euLogo}" alt="EU" style="width:36px;height:24px;object-fit:contain;display:inline-block;"/>` : ''}
-            <span class="ep-europass-text">europass</span>
-        </div>
-    </div>
+<div class="ep-photo-wrap">${photo ? `<img src="${photo}" alt="Photo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"/>` : `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="1.2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`}</div>
+<div class="ep-header-info">
+<div class="ep-name">${person.full_name || ''}</div>
+<div class="ep-meta-row">${person.date_of_birth ? `<span class="ep-meta-item"><strong>Date of birth:</strong>&nbsp;${formatDOB(person.date_of_birth)}</span>` : ''}${person.nationality ? `<span class="ep-meta-divider"></span><span class="ep-meta-item"><strong>Nationality:</strong>&nbsp;${person.nationality}</span>` : ''}${person.gender ? `<span class="ep-meta-divider"></span><span class="ep-meta-item"><strong>Gender:</strong>&nbsp;${person.gender}</span>` : ''}</div>
+${(person.address || person.mobile_phone || person.email_address) ? `<div class="ep-meta-contact">${person.address ? `<span>${person.address}</span>` : ''}${person.mobile_phone ? `<span>${person.mobile_phone}</span>` : ''}${person.email_address ? `<span>${person.email_address}</span>` : ''}</div>` : ''}
 </div>
-
+<div class="ep-logo-area"><div class="ep-europass-logo">${euLogo ? `<img src="${euLogo}" alt="EUROPASS" style="width:130px;height:auto;object-fit:contain;"/>` : ''}</div></div>
+</div>
 ${person.about_me ? `<div class="section-title-ep">About Me</div><div class="section-content"><p class="about-text">${person.about_me}</p></div>` : ''}
-
-<div class="section-title-ep">Work Experience</div>
-<div class="section-content">${workSection}</div>
-
-<div class="section-title-ep">Education and Training</div>
-<div class="section-content">${eduSection}</div>
-
+<div class="section-title-ep">Work Experience</div><div class="section-content">${workSection}</div>
+<div class="section-title-ep">Education and Training</div><div class="section-content">${eduSection}</div>
 <div class="section-title-ep">Language Skills</div>
 <div class="section-content">
-    ${person.mother_tongue ? `<div class="mother-tongue-row">Mother tongue(s): <span>${person.mother_tongue}</span></div>` : ''}
-    ${person.languages.length > 0 ? `
-    <div style="font-size:8pt;color:#333;margin-bottom:4px;">Other language(s):</div>
-    <table class="lang-table">
-        <thead>
-            <tr>
-                <th rowspan="2" class="lang-name" style="text-align:left;">Language</th>
-                <th colspan="2" class="lang-group-header">UNDERSTANDING</th>
-                <th colspan="2" class="lang-group-header">SPEAKING</th>
-                <th class="lang-group-header">WRITING</th>
-            </tr>
-            <tr>
-                <th>Listening</th><th>Reading</th><th>Spoken production</th><th>Spoken interaction</th><th>Writing</th>
-            </tr>
-        </thead>
-        <tbody>${langRows}</tbody>
-    </table>
-    <div class="lang-note">Levels: A1 and A2: Basic user; B1 and B2: Independent user; C1 and C2: Proficient user</div>
-    ` : ''}
+${person.mother_tongue ? `<div class="mother-tongue-row">Mother tongue(s): <span>${person.mother_tongue}</span></div>` : ''}
+${person.languages.length > 0 ? `<div style="font-size:8pt;color:#333;margin-bottom:4px;">Other language(s):</div><table class="lang-table"><thead><tr><th rowspan="2" class="lang-name" style="text-align:left;">Language</th><th colspan="2" class="lang-group-header">UNDERSTANDING</th><th colspan="2" class="lang-group-header">SPEAKING</th><th class="lang-group-header">WRITING</th></tr><tr><th>Listening</th><th>Reading</th><th>Spoken production</th><th>Spoken interaction</th><th>Writing</th></tr></thead><tbody>${langRows}</tbody></table><div class="lang-note">Levels: A1 and A2: Basic user; B1 and B2: Independent user; C1 and C2: Proficient user</div>` : ''}
 </div>
-
 ${person.certifications.some(c => c.title) ? `<div class="section-title-ep">Certifications</div><div class="section-content">${certSection}</div>` : ''}
 ${skillsText ? `<div class="section-title-ep">Skills</div><div class="section-content"><p class="skills-text">${skillsText}</p></div>` : ''}
-
-</body>
-</html>`;
+</body></html>`;
     };
 
     const downloadHTML = () => {
@@ -454,11 +284,11 @@ ${skillsText ? `<div class="section-title-ep">Skills</div><div class="section-co
         const safeDOB = formData.date_of_birth && /^\d{4}-\d{2}-\d{2}$/.test(formData.date_of_birth) ? formData.date_of_birth : null;
 
         const dataToSubmit = { ...formData, date_of_birth: safeDOB, photo: photoData, _method: 'PUT' };
-        
+
         router.post(`/dashboard/slokavia/${cv.id}`, dataToSubmit, {
             preserveScroll: true,
             onSuccess: () => {
-                showNotification('success', 'Berhasil', 'CV Slokavia berhasil diupdate');
+                showNotification('success', 'Berhasil', 'CV EUROPASS berhasil diupdate');
                 setIsGenerating(false);
                 setTimeout(() => router.visit(`/dashboard/slokavia/${cv.id}`), 1000);
             },
@@ -553,7 +383,7 @@ ${skillsText ? `<div class="section-title-ep">Skills</div><div class="section-co
                     {/* ── STEP 1: PROFILE ── */}
                     {currentStep === 1 && (
                         <>
-                            <h1 className="text-3xl font-bold mb-1">Edit CV Slokavia</h1>
+                            <h1 className="text-3xl font-bold mb-1">Edit CV EUROPASS</h1>
                             <p className="text-gray-500 mb-8">Step 1 — Personal Profile</p>
 
                             <div className="section-label">Basic Info</div>
@@ -814,7 +644,7 @@ ${skillsText ? `<div class="section-title-ep">Skills</div><div class="section-co
                                     : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>Print PDF</>
                                 }
                             </button>
-                            
+
                         </>
                     )}
 

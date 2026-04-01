@@ -13,11 +13,11 @@ export default function CVTemplateSelect() {
         },
         {
             id: "slokavia",
-            label: "Slovakia",
-            subtitle: "Loring Margi Slokavia",
+            label: "EUROPASS",
+            subtitle: "Loring Margi EUROPASS",
             desc: "Europass CV format with CEFR language levels. Suitable for European countries.",
             href: "/import/slokavia",
-            flagImg: "/images/Vlag van Slowakije.jpg",
+            flagImg: "/images/European.jpg",
             available: true,
         },
         {

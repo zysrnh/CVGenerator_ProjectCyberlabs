@@ -19,7 +19,7 @@ const CVImportGeneratorSlokavia = () => {
     fetch('/storage/logo/Mac.png').then(r=>r.blob()).then(b=>{
       const rd=new FileReader(); rd.onloadend=()=>setMacImageData(rd.result); rd.readAsDataURL(b);
     }).catch(()=>{});
-    fetch('/images/European.jpg').then(r=>r.blob()).then(b=>{
+    fetch('/storage/logo/euro.png').then(r=>r.blob()).then(b=>{
       const rd=new FileReader(); rd.onloadend=()=>setEuLogoData(rd.result); rd.readAsDataURL(b);
     }).catch(()=>{});
 
@@ -262,7 +262,7 @@ body{font-family:Arial,Helvetica,sans-serif;font-size:9pt;color:#111;background:
     ${(person.address||person.mobile_phone||person.email_address)?`<div class="ep-meta-contact">${person.address?`<span>${person.address}</span>`:''}${person.mobile_phone?`<span>${person.mobile_phone}</span>`:''}${person.email_address?`<span>${person.email_address}</span>`:''}</div>`:''}
   </div>
   <div class="ep-logo-area">
-    <div class="ep-europass-logo">${euLogo?`<img src="${euLogo}" alt="EU" style="width:36px;height:24px;object-fit:contain;display:inline-block;"/>`:''}<span class="ep-europass-text">europass</span></div>
+    <div class="ep-europass-logo">${euLogo ? `<img src="${euLogo}" alt="EUROPASS" style="width:130px;height:auto;object-fit:contain;"/>` : ''}</div>
   </div>
 </div>
 ${person.about_me?`<div class="section-title-ep">About Me</div><div class="section-content"><p class="about-text">${person.about_me}</p></div>`:''}
@@ -379,9 +379,9 @@ ${skillsText?`<div class="section-title-ep">Skills</div><div class="section-cont
 
         <div className="text-center mb-10">
           <div style={{display:'flex',justifyContent:'center',marginBottom:16}}>
-            <img src="/images/Vlag van Slowakije.jpg" alt="Slovakia" style={{ width: 64, height: 42, objectFit: 'cover', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
+            <img src="/images/European.jpg" alt="EUROPASS" style={{ width: 64, height: 42, objectFit: 'cover', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
           </div>
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3">CV Generator Slokavia</h1>
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3">CV Generator EUROPASS</h1>
           <p className="text-xs sm:text-base text-gray-500 font-light max-w-2xl mx-auto px-2">Upload Excel atau isi form manual &mdash; Generate CV format Europass PT. Loring Margi International</p>
         </div>
 

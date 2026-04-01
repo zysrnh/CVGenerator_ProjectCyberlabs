@@ -113,10 +113,8 @@ const CVDetailSlokavia = ({ cv }) => {
     </div>
     <div class="ep-logo-area">
         <div class="ep-europass-logo">
-            <img src="/images/logo-eu--mute.svg" alt="EU" style="width:36px;height:24px;object-fit:contain;"/>
-            <div class="ep-europass-text">europass</div>
+            <img src="/storage/logo/euro.png" alt="EUROPASS" style="width:130px;height:auto;object-fit:contain;"/>
         </div>
-        
     </div>
 </div>
 ${cv.about_me ? `<div class="section-title-ep">About Me</div><p class="about-text">${cv.about_me}</p>` : ''}

@@ -184,7 +184,7 @@ const Dashboard = ({ cvSubmissions, stats, filters, positions, nationalities, ac
                 <div className="flex gap-1.5 mb-7 bg-gray-100/80 rounded-2xl p-1.5 w-fit" style={{ animation: 'fadeIn 0.45s ease-out' }}>
                     {[
                         { key: 'turki', label: 'Turki', img: '/images/Turkey.jpg' },
-                        { key: 'slokavia', label: 'Slokavia', img: '/images/Vlag van Slowakije.jpg' },
+                        { key: 'slokavia', label: 'EUROPASS', img: '/images/European.jpg' },
                         { key: 'korea', label: 'Korea', img: '/images/KoranF.png' },
                     ].map(tab => (
                         <button

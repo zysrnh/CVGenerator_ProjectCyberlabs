@@ -23,7 +23,7 @@ const CVFormSlokavia = () => {
     useEffect(() => {
         const loadEuLogo = async () => {
             try {
-                const response = await fetch('/images/European.jpg');
+                const response = await fetch('/storage/logo/euro.png');
                 const blob = await response.blob();
                 const reader = new FileReader();
                 reader.onloadend = () => setEuLogoData(reader.result);
@@ -377,8 +377,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #111111
     </div>
     <div class="ep-logo-area">
         <div class="ep-europass-logo">
-            ${euLogo ? `<img src="${euLogo}" alt="EU" style="width:36px;height:24px;object-fit:contain;display:inline-block;"/>` : ''}
-            <span class="ep-europass-text">europass</span>
+            ${euLogo ? `<img src="${euLogo}" alt="EUROPASS" style="width:130px;height:auto;object-fit:contain;"/>` : ''}
         </div>
     </div>
 </div>
