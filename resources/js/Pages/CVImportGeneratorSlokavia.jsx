@@ -392,7 +392,7 @@ ${skillsText?`<div class="section-title-ep">Skills</div><div class="section-cont
                 <svg className="w-5 h-5 text-[#BF9952]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 Upload Excel
               </h2>
-              <a href="/template/CV_Template_Slokavia.xlsx" download className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-300 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-100 transition">
+              <a href="/storage/template/CV_Template_Slokavia.xlsx" download className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-300 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-100 transition">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Template
               </a>
