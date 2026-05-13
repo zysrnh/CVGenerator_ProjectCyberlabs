@@ -388,4 +388,21 @@ class CVImportController extends Controller
             throw $e;
         }
     }
+
+    /**
+     * Download CV Template
+     */
+    public function downloadTemplate($type)
+    {
+        $filename = $type === 'korea' ? 'CV_Template_Korea.xlsx' : 'CV_Template_Slokavia.xlsx';
+        $path = 'template/' . $filename;
+
+        if (!Storage::disk('public')->exists($path)) {
+            return abort(404, "Template file not found at " . $path);
+        }
+
+        return Storage::disk('public')->download($path, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
 }

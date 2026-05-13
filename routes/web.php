@@ -56,6 +56,7 @@ Route::delete('/cv-submissions-korea/{id}', [CvSubmissionKoreaController::class,
 // ── IMPORT BULK ───────────────────────────────────────────────
 Route::post('/cv-import', [CVImportController::class, 'store']);
 Route::post('/cv-import/bulk', [CVImportController::class, 'bulkStore']);
+Route::get('/download-template/{type}', [CVImportController::class, 'downloadTemplate']);
 
 // ══════════════════════════════════════════════════════════════
 //  AUTH ROUTES
